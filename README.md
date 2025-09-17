@@ -34,9 +34,9 @@ BeerReal aims to make bar visits more interactive, fun and encourage users to di
 
 ---
 
-## Team
+## Team & Main roles
 
-1. Hendrik Aarma
-2. Kevin Näälik
-3. Tamor Tomson
-4. Gloria Rannik
+1. Hendrik Aarma - Lead Dev
+2. Kevin Näälik - Project Lead and Presenter
+3. Tamor Tomson - Researcher
+4. Gloria Rannik - Editor
