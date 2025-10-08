@@ -1,4 +1,4 @@
-#  Step 2 Report — Data Storage / UI & Navigation
+#  Step 2 Report
 
 ## BeerRreal
 
