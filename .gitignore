@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+.vscode
+.vscode/*
+**/.vscode/
+.idea
+.gradle
+/app/build

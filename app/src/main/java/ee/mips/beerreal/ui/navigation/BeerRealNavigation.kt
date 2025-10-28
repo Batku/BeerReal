@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,8 +24,10 @@ import ee.mips.beerreal.ui.screens.add.AddBeerScreen
 import ee.mips.beerreal.ui.screens.home.HomeScreen
 import ee.mips.beerreal.ui.screens.post.PostDetailScreen
 import ee.mips.beerreal.ui.screens.profile.ProfileScreen
+import ee.mips.beerreal.ui.screens.map.MapScreen
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+    object Map : Screen("map", "Map", Icons.Filled.LocationOn)
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object Add : Screen("add", "Add", Icons.Filled.Add)
     object Profile : Screen("profile", "Profile", Icons.Filled.Person)
@@ -65,6 +68,7 @@ fun BottomNavigation(
     onProfileScrollToTop: () -> Unit
 ) {
     val screens = listOf(
+        Screen.Map,
         Screen.Home,
         Screen.Add,
         Screen.Profile
@@ -121,6 +125,9 @@ fun BeerRealNavHost(
         startDestination = Screen.Home.route,
         modifier = modifier
     ) {
+        composable(Screen.Map.route) {
+            MapScreen()
+        }
         composable(Screen.Home.route) {
             HomeScreen(
                 scrollToTopTrigger = homeScrollToTop,
