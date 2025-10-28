@@ -66,7 +66,13 @@ dependencies {
     
     // SharedPreferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    
+
+    // Google Maps
+    implementation("com.google.maps.android:maps-compose:2.11.2")
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
