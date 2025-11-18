@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONObject
 
 /**
  * API Service interface for Google Places API
@@ -74,54 +73,23 @@ class PlacesApiServiceImpl(
 
     /**
      * Parse JSON response from Places API into BarPlace objects
-     * Extracts place_id, name, geometry, opening_hours, rating, and vicinity
+     * Uses PlacesApiResponse data class for proper JSON mapping
      */
     private fun parseBarPlaces(jsonBody: String): List<BarPlace> {
-        val json = JSONObject(jsonBody)
-        val results = json.optJSONArray("results") ?: return emptyList()
+        val apiResponse = PlacesApiResponse.fromJson(jsonBody)
 
-        val bars = mutableListOf<BarPlace>()
-
-        for (i in 0 until results.length()) {
-            try {
-                val item = results.getJSONObject(i)
-
-                // Extract required fields
-                val placeId = item.optString("place_id", "")
-                val name = item.optString("name", "Unknown Bar")
-
-                // Extract geometry/location
-                val geometry = item.optJSONObject("geometry") ?: continue
-                val location = geometry.optJSONObject("location") ?: continue
-                val lat = location.optDouble("lat", 0.0)
-                val lng = location.optDouble("lng", 0.0)
-
-                // Extract opening hours (if available)
-                val openingHours = item.optJSONObject("opening_hours")
-                val isOpen = openingHours?.optBoolean("open_now")
-
-                // Extract optional fields
-                val rating = if (item.has("rating")) item.optDouble("rating") else null
-                val vicinity = if (item.has("vicinity")) item.optString("vicinity") else null
-
-                bars.add(
-                    BarPlace(
-                        placeId = placeId,
-                        name = name,
-                        latitude = lat,
-                        longitude = lng,
-                        isOpen = isOpen,
-                        rating = rating,
-                        vicinity = vicinity
-                    )
-                )
-            } catch (_: Exception) {
-                // Skip malformed entries
-                continue
-            }
+        // Map PlaceResult objects to BarPlace objects
+        return apiResponse.results.map { result ->
+            BarPlace(
+                placeId = result.placeId,
+                name = result.name,
+                latitude = result.geometry.location.lat,
+                longitude = result.geometry.location.lng,
+                isOpen = result.openingHours?.openNow,
+                rating = result.rating,
+                vicinity = result.vicinity
+            )
         }
-
-        return bars
     }
 }
 
