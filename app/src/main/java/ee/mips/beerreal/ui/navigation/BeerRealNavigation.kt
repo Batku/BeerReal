@@ -24,6 +24,7 @@ import ee.mips.beerreal.ui.screens.add.AddBeerScreen
 import ee.mips.beerreal.ui.screens.home.HomeScreen
 import ee.mips.beerreal.ui.screens.post.PostDetailScreen
 import ee.mips.beerreal.ui.screens.profile.ProfileScreen
+import ee.mips.beerreal.ui.screens.settings.SettingsScreen
 import ee.mips.beerreal.ui.screens.map.MapScreen
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
@@ -31,6 +32,7 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object Add : Screen("add", "Add", Icons.Filled.Add)
     object Profile : Screen("profile", "Profile", Icons.Filled.Person)
+    object Settings : Screen("settings", "Settings")
     object PostDetail : Screen("post_detail/{postId}", "Post Detail")
     
     fun createPostDetailRoute(postId: String) = "post_detail/$postId"
@@ -148,7 +150,13 @@ fun BeerRealNavHost(
             )
         }
         composable(Screen.Profile.route) {
-            ProfileScreen(scrollToTopTrigger = profileScrollToTop)
+            ProfileScreen(
+                scrollToTopTrigger = profileScrollToTop,
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+            )
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(Screen.PostDetail.route) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
