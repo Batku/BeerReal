@@ -29,7 +29,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
-    scrollToTopTrigger: Int = 0
+    scrollToTopTrigger: Int = 0,
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val gridState = rememberLazyGridState()
@@ -66,7 +67,7 @@ fun ProfileScreen(
                         contentDescription = "Refresh"
                     )
                 }
-                IconButton(onClick = { /* TODO: Settings */ }) {
+                IconButton(onClick = { onSettingsClick() }) {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Settings"
