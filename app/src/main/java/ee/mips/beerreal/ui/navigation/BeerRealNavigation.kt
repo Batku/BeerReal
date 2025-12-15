@@ -20,7 +20,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ee.mips.beerreal.ui.screens.add.AddBeerScreen
+import ee.mips.beerreal.ui.screens.add.AddBeerViewModel
+import ee.mips.beerreal.ui.screens.camera.CameraScreen
 import ee.mips.beerreal.ui.screens.home.HomeScreen
 import ee.mips.beerreal.ui.screens.post.PostDetailScreen
 import ee.mips.beerreal.ui.screens.profile.ProfileScreen
@@ -33,6 +36,7 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Add : Screen("add", "Add", Icons.Filled.Add)
     object Profile : Screen("profile", "Profile", Icons.Filled.Person)
     object Settings : Screen("settings", "Settings")
+    object Camera : Screen("camera", "Camera")
     object PostDetail : Screen("post_detail/{postId}", "Post Detail")
     
     fun createPostDetailRoute(postId: String) = "post_detail/$postId"
@@ -138,7 +142,16 @@ fun BeerRealNavHost(
                 }
             )
         }
-        composable(Screen.Add.route) {
+        composable(Screen.Add.route) { backStackEntry ->
+            val viewModel: AddBeerViewModel = viewModel()
+            
+            val savedStateHandle = backStackEntry.savedStateHandle
+            val imageUri = savedStateHandle.get<String>("imageUri")
+            if (imageUri != null) {
+                viewModel.updateImageUrl(imageUri)
+                savedStateHandle.remove<String>("imageUri")
+            }
+
             AddBeerScreen(
                 onNavigateBack = {
                     navController.navigate(Screen.Home.route) {
@@ -146,6 +159,21 @@ fun BeerRealNavHost(
                             inclusive = false
                         }
                     }
+                },
+                onTakePhotoClick = {
+                    navController.navigate(Screen.Camera.route)
+                },
+                viewModel = viewModel
+            )
+        }
+        composable(Screen.Camera.route) {
+            CameraScreen(
+                onImageCaptured = { uri ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("imageUri", uri.toString())
+                    navController.popBackStack()
+                },
+                onError = {
+                    navController.popBackStack()
                 }
             )
         }

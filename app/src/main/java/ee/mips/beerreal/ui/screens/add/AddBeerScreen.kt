@@ -1,6 +1,7 @@
 package ee.mips.beerreal.ui.screens.add
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import ee.mips.beerreal.ui.components.ValidatedTextField
 @Composable
 fun AddBeerScreen(
     onNavigateBack: () -> Unit,
+    onTakePhotoClick: () -> Unit,
     viewModel: AddBeerViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -88,7 +90,8 @@ fun AddBeerScreen(
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { onTakePhotoClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -102,7 +105,7 @@ fun AddBeerScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Take a photo of your beer!",
+                        text = if (uiState.imageUrl.isNotEmpty()) "Photo taken!" else "Take a photo of your beer!",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
