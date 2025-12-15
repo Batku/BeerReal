@@ -26,6 +26,8 @@ import ee.mips.beerreal.data.model.VoteType
 import java.text.SimpleDateFormat
 import java.util.*
 
+import coil.compose.AsyncImage
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeerPostCard(
@@ -96,19 +98,20 @@ fun BeerPostCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Beer image placeholder
+            // Beer image
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(300.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "🍺 Beer Photo",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                AsyncImage(
+                    model = post.imageData,
+                    contentDescription = "Beer Photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
             }
             

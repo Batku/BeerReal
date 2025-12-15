@@ -1,9 +1,10 @@
 package ee.mips.beerreal.data.repository
 
+import android.content.Context
 import android.net.Uri
+import android.util.Base64
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
 import ee.mips.beerreal.data.MockData
 import ee.mips.beerreal.data.api.BeerApiService
 import ee.mips.beerreal.data.api.CreatePostRequest
@@ -18,9 +19,9 @@ import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class BeerRepository(
+    private val context: Context,
     private val apiService: BeerApiService = RetrofitClient.apiService,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
     
     fun getBeerPosts(): Flow<List<BeerPost>> = flow {
@@ -84,18 +85,23 @@ class BeerRepository(
             val user = auth.currentUser ?: throw Exception("User not authenticated")
             val token = user.getIdToken(false).await().token ?: throw Exception("Failed to get token")
             
-            // Upload image to Firebase Storage
-            Log.d("BeerRepository", "Uploading image...")
-            val filename = "${UUID.randomUUID()}.jpg"
-            val ref = storage.reference.child("posts/$filename")
-            ref.putFile(imageUri).await()
-            val downloadUrl = ref.downloadUrl.await().toString()
-            Log.d("BeerRepository", "Image uploaded: $downloadUrl")
+            // Convert image to Base64
+            Log.d("BeerRepository", "Converting image to Base64...")
+            val inputStream = context.contentResolver.openInputStream(imageUri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+            
+            if (bytes == null) {
+                throw Exception("Failed to read image data")
+            }
+            
+            val base64Image = Base64.encodeToString(bytes, Base64.NO_WRAP)
+            val imageData = "data:image/jpeg;base64,$base64Image"
 
             // Create post via API
             val request = CreatePostRequest(
                 caption = caption,
-                imageUrl = downloadUrl,
+                imageData = imageData,
                 location = "Unknown" // TODO: Get real location
             )
             

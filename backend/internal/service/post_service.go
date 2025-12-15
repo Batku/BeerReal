@@ -37,7 +37,7 @@ func (s *postService) CreatePost(userID string, req *models.CreatePostRequest) (
 		Username:         user.Username,
 		UserProfileImage: user.ProfileImageURL,
 		Caption:          req.Caption,
-		ImageURL:         req.ImageURL,
+		ImageData:         req.ImageData,
 		Location:         req.Location,
 		Comments:         []models.Comment{},
 	}

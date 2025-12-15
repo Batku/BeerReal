@@ -22,7 +22,7 @@ type BeerPost struct {
 	Username         string    `json:"username" db:"username"`
 	UserProfileImage *string   `json:"userProfileImage" db:"user_profile_image"`
 	Caption          string    `json:"caption" db:"caption"`
-	ImageURL         string    `json:"imageUrl" db:"image_url"`
+	ImageData         string    `json:"imageData" db:"image_data"`
 	Location         *string   `json:"location" db:"location"`
 	Timestamp        time.Time `json:"timestamp" db:"timestamp"`
 	Upvotes          int       `json:"upvotes" db:"upvotes"`
@@ -65,7 +65,7 @@ const (
 // Request/Response DTOs
 type CreatePostRequest struct {
 	Caption  string  `json:"caption" binding:"required"`
-	ImageURL string  `json:"imageUrl" binding:"required"`
+	ImageData string  `json:"imageData" binding:"required"`
 	Location *string `json:"location"`
 }
 

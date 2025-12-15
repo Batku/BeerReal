@@ -126,6 +126,9 @@ fun BottomNavigation(
     }
 }
 
+import androidx.compose.ui.platform.LocalContext
+import ee.mips.beerreal.data.repository.BeerRepository
+
 @Composable
 fun BeerRealNavHost(
     navController: NavHostController,
@@ -133,6 +136,9 @@ fun BeerRealNavHost(
     homeScrollToTop: Int,
     profileScrollToTop: Int
 ) {
+    val context = LocalContext.current
+    val repository = remember { BeerRepository(context) }
+    
     val startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
         Screen.Home.route
     } else {
@@ -165,7 +171,13 @@ fun BeerRealNavHost(
             )
         }
         composable(Screen.Add.route) { backStackEntry ->
-            val viewModel: AddBeerViewModel = viewModel()
+            val viewModel: AddBeerViewModel = viewModel(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return AddBeerViewModel(repository) as T
+                    }
+                }
+            )
             
             val savedStateHandle = backStackEntry.savedStateHandle
             val imageUriString = savedStateHandle.get<String>("imageUri")
