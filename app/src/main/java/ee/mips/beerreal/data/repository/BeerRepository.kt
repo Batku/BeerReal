@@ -1,6 +1,7 @@
 package ee.mips.beerreal.data.repository
 
 import android.net.Uri
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import ee.mips.beerreal.data.MockData
@@ -26,14 +27,19 @@ class BeerRepository(
         try {
             val token = auth.currentUser?.getIdToken(false)?.await()?.token
             val authHeader = if (token != null) "Bearer $token" else null
+            Log.d("BeerRepository", "Fetching posts with token: ${token?.take(10)}...")
+            
             val response = apiService.getPosts(token = authHeader)
             if (response.isSuccessful) {
+                Log.d("BeerRepository", "Posts fetched successfully: ${response.body()?.posts?.size} posts")
                 emit(response.body()?.posts ?: emptyList())
             } else {
+                Log.e("BeerRepository", "Failed to fetch posts: ${response.code()} ${response.message()}")
                 // Fallback to mock data if API fails (e.g. backend not running)
                 emit(MockData.getBeerPosts())
             }
         } catch (e: Exception) {
+            Log.e("BeerRepository", "Error fetching posts", e)
             // Fallback to mock data
             emit(MockData.getBeerPosts())
         }
@@ -74,14 +80,17 @@ class BeerRepository(
         imageUri: Uri
     ): Result<BeerPost> {
         return try {
+            Log.d("BeerRepository", "Starting post creation...")
             val user = auth.currentUser ?: throw Exception("User not authenticated")
             val token = user.getIdToken(false).await().token ?: throw Exception("Failed to get token")
             
             // Upload image to Firebase Storage
+            Log.d("BeerRepository", "Uploading image...")
             val filename = "${UUID.randomUUID()}.jpg"
             val ref = storage.reference.child("posts/$filename")
             ref.putFile(imageUri).await()
             val downloadUrl = ref.downloadUrl.await().toString()
+            Log.d("BeerRepository", "Image uploaded: $downloadUrl")
 
             // Create post via API
             val request = CreatePostRequest(
@@ -90,14 +99,18 @@ class BeerRepository(
                 location = "Unknown" // TODO: Get real location
             )
             
+            Log.d("BeerRepository", "Creating post on backend...")
             val response = apiService.createPost(request, "Bearer $token")
             
             if (response.isSuccessful && response.body() != null) {
+                Log.d("BeerRepository", "Post created successfully")
                 Result.success(response.body()!!)
             } else {
+                Log.e("BeerRepository", "Failed to create post: ${response.code()} ${response.message()}")
                 Result.failure(Exception("Failed to create post: ${response.message()}"))
             }
         } catch (e: Exception) {
+            Log.e("BeerRepository", "Error creating post", e)
             Result.failure(e)
         }
     }

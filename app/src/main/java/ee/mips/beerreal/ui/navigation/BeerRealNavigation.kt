@@ -29,8 +29,11 @@ import ee.mips.beerreal.ui.screens.post.PostDetailScreen
 import ee.mips.beerreal.ui.screens.profile.ProfileScreen
 import ee.mips.beerreal.ui.screens.settings.SettingsScreen
 import ee.mips.beerreal.ui.screens.map.MapScreen
+import ee.mips.beerreal.ui.screens.login.LoginScreen
+import com.google.firebase.auth.FirebaseAuth
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+    object Login : Screen("login", "Login")
     object Map : Screen("map", "Map", Icons.Filled.LocationOn)
     object Home : Screen("home", "Home", Icons.Filled.Home)
     object Add : Screen("add", "Add", Icons.Filled.Add)
@@ -48,14 +51,18 @@ fun BeerRealApp() {
     val navController = rememberNavController()
     var homeScrollToTop by remember { mutableStateOf(0) }
     var profileScrollToTop by remember { mutableStateOf(0) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     
     Scaffold(
         bottomBar = {
-            BottomNavigation(
-                navController = navController,
-                onHomeScrollToTop = { homeScrollToTop++ },
-                onProfileScrollToTop = { profileScrollToTop++ }
-            )
+            if (currentRoute != Screen.Login.route && currentRoute != Screen.Camera.route) {
+                BottomNavigation(
+                    navController = navController,
+                    onHomeScrollToTop = { homeScrollToTop++ },
+                    onProfileScrollToTop = { profileScrollToTop++ }
+                )
+            }
         }
     ) { innerPadding ->
         BeerRealNavHost(
@@ -126,11 +133,26 @@ fun BeerRealNavHost(
     homeScrollToTop: Int,
     profileScrollToTop: Int
 ) {
+    val startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
+        Screen.Home.route
+    } else {
+        Screen.Login.route
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Screen.Map.route) {
             MapScreen()
         }
