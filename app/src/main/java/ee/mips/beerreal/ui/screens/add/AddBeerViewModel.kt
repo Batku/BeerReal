@@ -1,5 +1,6 @@
 package ee.mips.beerreal.ui.screens.add
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ee.mips.beerreal.data.repository.BeerRepository
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 
 data class AddBeerUiState(
     val caption: String = "",
-    val imageUrl: String = "",
+    val imageUri: Uri? = null,
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null,
@@ -20,7 +21,7 @@ data class AddBeerUiState(
 
 data class ValidationErrors(
     val captionError: String? = null,
-    val imageUrlError: String? = null
+    val imageError: String? = null
 )
 
 class AddBeerViewModel(
@@ -37,10 +38,10 @@ class AddBeerViewModel(
         )
     }
     
-    fun updateImageUrl(url: String) {
+    fun updateImageUri(uri: Uri) {
         _uiState.value = _uiState.value.copy(
-            imageUrl = url,
-            validationErrors = _uiState.value.validationErrors.copy(imageUrlError = null)
+            imageUri = uri,
+            validationErrors = _uiState.value.validationErrors.copy(imageError = null)
         )
     }
     
@@ -59,7 +60,7 @@ class AddBeerViewModel(
             try {
                 val result = repository.addBeerPost(
                     caption = currentState.caption,
-                    imageUrl = currentState.imageUrl
+                    imageUri = currentState.imageUri!!
                 )
                 
                 result.onSuccess {
@@ -86,8 +87,12 @@ class AddBeerViewModel(
     private fun validateInput(state: AddBeerUiState): ValidationErrors {
         return ValidationErrors(
             captionError = ValidationUtils.validateCaption(state.caption),
-            imageUrlError = ValidationUtils.validateImageUrl(state.imageUrl)
+            imageError = if (state.imageUri == null) "Image is required" else null
         )
+    }
+    
+    fun ValidationErrors.hasErrors(): Boolean {
+        return captionError != null || imageError != null
     }
     
     fun clearError() {

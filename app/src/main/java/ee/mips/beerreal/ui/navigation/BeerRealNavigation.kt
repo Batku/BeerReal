@@ -146,9 +146,10 @@ fun BeerRealNavHost(
             val viewModel: AddBeerViewModel = viewModel()
             
             val savedStateHandle = backStackEntry.savedStateHandle
-            val imageUri = savedStateHandle.get<String>("imageUri")
-            if (imageUri != null) {
-                viewModel.updateImageUrl(imageUri)
+            val imageUriString = savedStateHandle.get<String>("imageUri")
+            if (imageUriString != null) {
+                val imageUri = android.net.Uri.parse(imageUriString)
+                viewModel.updateImageUri(imageUri)
                 savedStateHandle.remove<String>("imageUri")
             }
 

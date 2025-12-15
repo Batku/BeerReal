@@ -82,6 +82,20 @@ dependencies {
 
     implementation("androidx.core:core-splashscreen:1.0.1")
 
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.auth)
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
+    // Coil
+    implementation(libs.coil.compose)
+
     // CameraX
     val cameraVersion = "1.3.1"
     implementation("androidx.camera:camera-core:$cameraVersion")

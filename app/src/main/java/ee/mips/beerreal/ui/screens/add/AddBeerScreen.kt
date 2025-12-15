@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ee.mips.beerreal.ui.components.ValidatedTextField
 
+import coil.compose.AsyncImage
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddBeerScreen(
@@ -94,21 +96,30 @@ fun AddBeerScreen(
                     .clickable { onTakePhotoClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PhotoCamera,
-                        contentDescription = "Take Photo",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                if (uiState.imageUri != null) {
+                    AsyncImage(
+                        model = uiState.imageUri,
+                        contentDescription = "Selected beer photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (uiState.imageUrl.isNotEmpty()) "Photo taken!" else "Take a photo of your beer!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PhotoCamera,
+                            contentDescription = "Take Photo",
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Take a photo of your beer!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             
@@ -120,16 +131,6 @@ fun AddBeerScreen(
                 isError = uiState.validationErrors.captionError != null,
                 errorMessage = uiState.validationErrors.captionError,
                 singleLine = false
-            )
-            
-            // Mock image URL field (for demo purposes)
-            ValidatedTextField(
-                value = uiState.imageUrl,
-                onValueChange = viewModel::updateImageUrl,
-                label = "Image URL (for demo) *",
-                isError = uiState.validationErrors.imageUrlError != null,
-                errorMessage = uiState.validationErrors.imageUrlError,
-                keyboardType = KeyboardType.Uri
             )
             
             Spacer(modifier = Modifier.height(16.dp))

@@ -1,19 +1,42 @@
 package ee.mips.beerreal.data.repository
 
+import android.net.Uri
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.storage.FirebaseStorage
 import ee.mips.beerreal.data.MockData
+import ee.mips.beerreal.data.api.BeerApiService
+import ee.mips.beerreal.data.api.CreatePostRequest
+import ee.mips.beerreal.data.api.RetrofitClient
 import ee.mips.beerreal.data.model.BeerPost
 import ee.mips.beerreal.data.model.User
 import ee.mips.beerreal.data.model.VoteType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
-class BeerRepository {
+class BeerRepository(
+    private val apiService: BeerApiService = RetrofitClient.apiService,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
+) {
     
     fun getBeerPosts(): Flow<List<BeerPost>> = flow {
-        // Simulate network delay
-        delay(500)
-        emit(MockData.getBeerPosts())
+        try {
+            val token = auth.currentUser?.getIdToken(false)?.await()?.token
+            val authHeader = if (token != null) "Bearer $token" else null
+            val response = apiService.getPosts(token = authHeader)
+            if (response.isSuccessful) {
+                emit(response.body()?.posts ?: emptyList())
+            } else {
+                // Fallback to mock data if API fails (e.g. backend not running)
+                emit(MockData.getBeerPosts())
+            }
+        } catch (e: Exception) {
+            // Fallback to mock data
+            emit(MockData.getBeerPosts())
+        }
     }
     
     fun getCurrentUser(): Flow<User> = flow {
@@ -32,33 +55,48 @@ class BeerRepository {
     }
     
     fun getPostById(postId: String): Flow<BeerPost?> = flow {
-        delay(300)
-        emit(MockData.getBeerPosts().find { it.id == postId })
+        try {
+            val token = auth.currentUser?.getIdToken(false)?.await()?.token
+            val authHeader = if (token != null) "Bearer $token" else null
+            val response = apiService.getPost(postId, token = authHeader)
+            if (response.isSuccessful) {
+                emit(response.body())
+            } else {
+                emit(MockData.getBeerPosts().find { it.id == postId })
+            }
+        } catch (e: Exception) {
+            emit(MockData.getBeerPosts().find { it.id == postId })
+        }
     }
     
     suspend fun addBeerPost(
         caption: String,
-        imageUrl: String
+        imageUri: Uri
     ): Result<BeerPost> {
         return try {
-            // Simulate network call
-            delay(1000)
+            val user = auth.currentUser ?: throw Exception("User not authenticated")
+            val token = user.getIdToken(false).await().token ?: throw Exception("Failed to get token")
             
-            val newPost = BeerPost(
-                id = "post_${System.currentTimeMillis()}",
-                userId = MockData.currentUser.id,
-                username = MockData.currentUser.username,
-                userProfileImage = MockData.currentUser.profileImageUrl,
+            // Upload image to Firebase Storage
+            val filename = "${UUID.randomUUID()}.jpg"
+            val ref = storage.reference.child("posts/$filename")
+            ref.putFile(imageUri).await()
+            val downloadUrl = ref.downloadUrl.await().toString()
+
+            // Create post via API
+            val request = CreatePostRequest(
                 caption = caption,
-                imageUrl = imageUrl,
-                location = "Current Location", // In real app, this would come from location service
-                timestamp = java.util.Date(),
-                upvotes = 0,
-                downvotes = 0,
-                comments = emptyList()
+                imageUrl = downloadUrl,
+                location = "Unknown" // TODO: Get real location
             )
             
-            Result.success(newPost)
+            val response = apiService.createPost(request, "Bearer $token")
+            
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to create post: ${response.message()}"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
