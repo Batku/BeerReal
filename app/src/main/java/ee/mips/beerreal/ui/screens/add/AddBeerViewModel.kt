@@ -103,7 +103,3 @@ class AddBeerViewModel(
         _uiState.value = AddBeerUiState()
     }
 }
-
-private fun ValidationErrors.hasErrors(): Boolean {
-    return captionError != null || imageUrlError != null
-}
