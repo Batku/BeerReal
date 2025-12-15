@@ -96,6 +96,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // Google Sign In
+    implementation(libs.play.services.auth)
+
     // CameraX
     val cameraVersion = "1.3.1"
     implementation("androidx.camera:camera-core:$cameraVersion")

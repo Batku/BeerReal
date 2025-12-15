@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.firebase.auth.GoogleAuthProvider
+
 data class LoginUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -31,11 +34,12 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    fun signInAnonymously() {
+    fun signInWithGoogle(account: GoogleSignInAccount) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                auth.signInAnonymously().await()
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                auth.signInWithCredential(credential).await()
                 _uiState.value = _uiState.value.copy(isLoading = false, isLoggedIn = true)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
@@ -43,5 +47,7 @@ class LoginViewModel : ViewModel() {
         }
     }
     
-    // In a real app, you would add email/password or Google sign in here
+    fun setError(message: String) {
+        _uiState.value = _uiState.value.copy(isLoading = false, error = message)
+    }
 }
