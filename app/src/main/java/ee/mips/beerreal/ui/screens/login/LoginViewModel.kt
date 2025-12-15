@@ -18,6 +18,8 @@ data class LoginUiState(
     val isLoggedIn: Boolean = false
 )
 
+import android.util.Log
+
 class LoginViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     
@@ -35,14 +37,17 @@ class LoginViewModel : ViewModel() {
     }
 
     fun signInWithGoogle(account: GoogleSignInAccount) {
+        Log.d("LoginViewModel", "Starting Firebase sign in with Google account: ${account.email}")
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-                auth.signInWithCredential(credential).await()
+                val result = auth.signInWithCredential(credential).await()
+                Log.d("LoginViewModel", "Firebase sign in successful. User: ${result.user?.uid}")
                 _uiState.value = _uiState.value.copy(isLoading = false, isLoggedIn = true)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                Log.e("LoginViewModel", "Firebase sign in failed", e)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = "Firebase Auth Error: ${e.message}")
             }
         }
     }

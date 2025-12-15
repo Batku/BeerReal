@@ -59,6 +59,8 @@ fun LoginScreen(
             } catch (e: ApiException) {
                 viewModel.setError("Google sign in failed: ${e.statusCode}")
             }
+        } else {
+            viewModel.setError("Sign in cancelled or failed (Result Code: ${result.resultCode})")
         }
     }
 
