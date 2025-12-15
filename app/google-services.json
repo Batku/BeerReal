@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "940240053356",
+    "project_id": "beer-102e3",
+    "storage_bucket": "beer-102e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940240053356:android:0c7ea0c45202105e6b2449",
+        "android_client_info": {
+          "package_name": "ee.mips.beerreal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "940240053356-l1so1fvvms0g6btdunleqe9nmd4gpg6f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiQFMvAVi0fXXjcWHMavF-VhYPUoVsO3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "940240053356-l1so1fvvms0g6btdunleqe9nmd4gpg6f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
