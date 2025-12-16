@@ -17,7 +17,7 @@ data class PostDetailUiState(
 )
 
 class PostDetailViewModel(
-    private val repository: BeerRepository = BeerRepository()
+    private val repository: BeerRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(PostDetailUiState())

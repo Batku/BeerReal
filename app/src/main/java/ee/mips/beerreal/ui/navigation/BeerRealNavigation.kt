@@ -25,12 +25,17 @@ import ee.mips.beerreal.ui.screens.add.AddBeerScreen
 import ee.mips.beerreal.ui.screens.add.AddBeerViewModel
 import ee.mips.beerreal.ui.screens.camera.CameraScreen
 import ee.mips.beerreal.ui.screens.home.HomeScreen
+import ee.mips.beerreal.ui.screens.home.HomeViewModel
 import ee.mips.beerreal.ui.screens.post.PostDetailScreen
+import ee.mips.beerreal.ui.screens.post.PostDetailViewModel
 import ee.mips.beerreal.ui.screens.profile.ProfileScreen
+import ee.mips.beerreal.ui.screens.profile.ProfileViewModel
 import ee.mips.beerreal.ui.screens.settings.SettingsScreen
 import ee.mips.beerreal.ui.screens.map.MapScreen
 import ee.mips.beerreal.ui.screens.login.LoginScreen
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.platform.LocalContext
+import ee.mips.beerreal.data.repository.BeerRepository
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
     object Login : Screen("login", "Login")
@@ -126,9 +131,6 @@ fun BottomNavigation(
     }
 }
 
-import androidx.compose.ui.platform.LocalContext
-import ee.mips.beerreal.data.repository.BeerRepository
-
 @Composable
 fun BeerRealNavHost(
     navController: NavHostController,
@@ -163,7 +165,15 @@ fun BeerRealNavHost(
             MapScreen()
         }
         composable(Screen.Home.route) {
+            val viewModel: HomeViewModel = viewModel(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return HomeViewModel(repository) as T
+                    }
+                }
+            )
             HomeScreen(
+                viewModel = viewModel,
                 scrollToTopTrigger = homeScrollToTop,
                 onNavigateToPost = { postId ->
                     navController.navigate(Screen.PostDetail.createPostDetailRoute(postId))
@@ -213,7 +223,15 @@ fun BeerRealNavHost(
             )
         }
         composable(Screen.Profile.route) {
+            val viewModel: ProfileViewModel = viewModel(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return ProfileViewModel(repository) as T
+                    }
+                }
+            )
             ProfileScreen(
+                viewModel = viewModel,
                 scrollToTopTrigger = profileScrollToTop,
                 onSettingsClick = { navController.navigate(Screen.Settings.route) }
             )
@@ -223,9 +241,17 @@ fun BeerRealNavHost(
         }
         composable(Screen.PostDetail.route) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val viewModel: PostDetailViewModel = viewModel(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return PostDetailViewModel(repository) as T
+                    }
+                }
+            )
             PostDetailScreen(
                 postId = postId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = viewModel
             )
         }
     }
