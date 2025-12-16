@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -32,24 +33,31 @@ func NewPostHandler(service service.PostService) *PostHandler {
 // @Failure 500 {object} map[string]string
 // @Router /api/posts [post]
 func (h *PostHandler) CreatePost(c *gin.Context) {
+	log.Println("[CreatePost] Request received")
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
+		log.Println("[CreatePost] ERROR: User not authenticated")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
+	log.Printf("[CreatePost] UserID: %s", userID)
 
 	var req models.CreatePostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[CreatePost] ERROR: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	log.Printf("[CreatePost] Request data - Caption: %s, Location: %v, ImageDataLength: %d", req.Caption, req.Location, len(req.ImageData))
 
 	post, err := h.service.CreatePost(userID, &req)
 	if err != nil {
+		log.Printf("[CreatePost] ERROR: Failed to create post: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	log.Printf("[CreatePost] SUCCESS: Post created with ID: %s", post.ID)
 	c.JSON(http.StatusCreated, post)
 }
 
@@ -64,18 +72,27 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /api/posts [get]
 func (h *PostHandler) GetPosts(c *gin.Context) {
+	log.Println("[GetPosts] Request received")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	log.Printf("[GetPosts] Parameters - Page: %d, PageSize: %d", page, pageSize)
 
 	// Get user ID if authenticated (optional for viewing posts)
 	userID, _ := middleware.GetUserID(c)
+	if userID != "" {
+		log.Printf("[GetPosts] Authenticated user: %s", userID)
+	} else {
+		log.Println("[GetPosts] Unauthenticated request")
+	}
 
 	response, err := h.service.GetPosts(userID, page, pageSize)
 	if err != nil {
+		log.Printf("[GetPosts] ERROR: Failed to get posts: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	log.Printf("[GetPosts] SUCCESS: Returning %d posts (total: %d)", len(response.Posts), response.TotalCount)
 	c.JSON(http.StatusOK, response)
 }
 
@@ -91,20 +108,29 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 // @Router /api/posts/{id} [get]
 func (h *PostHandler) GetPost(c *gin.Context) {
 	postID := c.Param("id")
+	log.Printf("[GetPost] Request received for post ID: %s", postID)
 	if postID == "" {
+		log.Println("[GetPost] ERROR: Post ID is empty")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Post ID is required"})
 		return
 	}
 
 	// Get user ID if authenticated (optional)
 	userID, _ := middleware.GetUserID(c)
+	if userID != "" {
+		log.Printf("[GetPost] Authenticated user: %s", userID)
+	} else {
+		log.Println("[GetPost] Unauthenticated request")
+	}
 
 	post, err := h.service.GetPostByID(postID, userID)
 	if err != nil {
+		log.Printf("[GetPost] ERROR: Failed to get post: %v", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
 
+	log.Printf("[GetPost] SUCCESS: Returning post ID: %s", post.ID)
 	c.JSON(http.StatusOK, post)
 }
 

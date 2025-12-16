@@ -62,7 +62,7 @@ GET /api/posts?page=1&pageSize=20
       "username": "johndoe",
       "userProfileImage": "https://example.com/profile.jpg",
       "caption": "Best IPA ever!",
-      "imageUrl": "https://example.com/beer.jpg",
+      "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
       "location": "Berlin, Germany",
       "timestamp": "2025-12-15T10:30:00Z",
       "upvotes": 42,
@@ -119,7 +119,7 @@ GET /api/posts/:id
   "username": "johndoe",
   "userProfileImage": "https://example.com/profile.jpg",
   "caption": "Best IPA ever!",
-  "imageUrl": "https://example.com/beer.jpg",
+  "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
   "location": "Berlin, Germany",
   "timestamp": "2025-12-15T10:30:00Z",
   "upvotes": 42,
@@ -149,7 +149,7 @@ Content-Type: application/json
 ```json
 {
   "caption": "Best IPA ever!",
-  "imageUrl": "https://example.com/beer.jpg",
+  "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
   "location": "Berlin, Germany"
 }
 ```
@@ -158,8 +158,12 @@ Content-Type: application/json
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `caption` | string | ✅ | Post caption/description |
-| `imageUrl` | string | ✅ | URL to the beer image |
+| `imageData` | string | ✅ | Base64 encoded image with data URI prefix |
 | `location` | string | ❌ | Optional location string |
+
+**Note:** `imageData` should be a base64 encoded string with the data URI prefix:
+- Format: `data:image/jpeg;base64,<base64-string>`
+- Supported formats: JPEG, PNG, WebP
 
 **Response:** `201 Created`
 ```json
@@ -169,7 +173,7 @@ Content-Type: application/json
   "username": "johndoe",
   "userProfileImage": "https://example.com/profile.jpg",
   "caption": "Best IPA ever!",
-  "imageUrl": "https://example.com/beer.jpg",
+  "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
   "location": "Berlin, Germany",
   "timestamp": "2025-12-15T10:30:00Z",
   "upvotes": 0,
@@ -197,7 +201,7 @@ Content-Type: application/json
   "username": "string",
   "userProfileImage": "string | null",
   "caption": "string",
-  "imageUrl": "string",
+  "imageData": "string (base64)",
   "location": "string | null",
   "timestamp": "string (ISO 8601)",
   "upvotes": "integer",

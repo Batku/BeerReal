@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/batku/beerreal/internal/models"
@@ -28,8 +29,9 @@ func NewPostRepository(db *sql.DB) PostRepository {
 }
 
 func (r *postRepository) CreatePost(post *models.BeerPost) error {
+	log.Printf("[Repository] CreatePost called for userID: %s", post.UserID)
 	query := `
-		INSERT INTO beer_posts (id, user_id, caption, image_url, location, timestamp, upvotes, downvotes, created_at, updated_at)
+		INSERT INTO beer_posts (id, user_id, caption, image_data, location, timestamp, upvotes, downvotes, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
@@ -40,29 +42,35 @@ func (r *postRepository) CreatePost(post *models.BeerPost) error {
 	post.Upvotes = 0
 	post.Downvotes = 0
 
-	_, err := r.db.Exec(query, post.ID, post.UserID, post.Caption, post.ImageURL,
+	log.Printf("[Repository] Inserting post with ID: %s, imageDataLength: %d", post.ID, len(post.ImageData))
+	_, err := r.db.Exec(query, post.ID, post.UserID, post.Caption, post.ImageData,
 		post.Location, post.Timestamp, post.Upvotes, post.Downvotes,
 		post.CreatedAt, post.UpdatedAt)
 
 	if err != nil {
+		log.Printf("[Repository] ERROR: Failed to insert post: %v", err)
 		return fmt.Errorf("failed to create post: %w", err)
 	}
 
 	// Update user's total posts count
+	log.Printf("[Repository] Updating user post count for userID: %s", post.UserID)
 	updateUserQuery := `UPDATE users SET total_posts = total_posts + 1, updated_at = ? WHERE id = ?`
 	_, err = r.db.Exec(updateUserQuery, time.Now(), post.UserID)
 	if err != nil {
+		log.Printf("[Repository] ERROR: Failed to update user post count: %v", err)
 		return fmt.Errorf("failed to update user post count: %w", err)
 	}
 
+	log.Printf("[Repository] Post created successfully: %s", post.ID)
 	return nil
 }
 
 func (r *postRepository) GetPostByID(postID string, userID string) (*models.BeerPost, error) {
+	log.Printf("[Repository] GetPostByID called - postID: %s, userID: %s", postID, userID)
 	query := `
 		SELECT 
 			bp.id, bp.user_id, u.username, u.profile_image_url,
-			bp.caption, bp.image_url, bp.location, bp.timestamp,
+			bp.caption, bp.image_data, bp.location, bp.timestamp,
 			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
 		FROM beer_posts bp
 		JOIN users u ON bp.user_id = u.id
@@ -72,20 +80,24 @@ func (r *postRepository) GetPostByID(postID string, userID string) (*models.Beer
 	post := &models.BeerPost{}
 	err := r.db.QueryRow(query, postID).Scan(
 		&post.ID, &post.UserID, &post.Username, &post.UserProfileImage,
-		&post.Caption, &post.ImageURL, &post.Location, &post.Timestamp,
+		&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
 		&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
 	)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			log.Printf("[Repository] Post not found: %s", postID)
 			return nil, fmt.Errorf("post not found")
 		}
+		log.Printf("[Repository] ERROR: Database query failed: %v", err)
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
 
+	log.Printf("[Repository] Post found, fetching comments for post: %s", postID)
 	// Get comments
 	comments, err := r.GetCommentsByPostID(postID)
 	if err != nil {
+		log.Printf("[Repository] ERROR: Failed to get comments: %v", err)
 		return nil, err
 	}
 	post.Comments = comments
@@ -99,23 +111,27 @@ func (r *postRepository) GetPostByID(postID string, userID string) (*models.Beer
 		}
 	}
 
+	log.Printf("[Repository] GetPostByID successful for post: %s", postID)
 	return post, nil
 }
 
 func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.BeerPost, int, error) {
+	log.Printf("[Repository] GetPosts called - userID: %s, limit: %d, offset: %d", userID, limit, offset)
 	// Get total count
 	var totalCount int
 	countQuery := `SELECT COUNT(*) FROM beer_posts`
 	err := r.db.QueryRow(countQuery).Scan(&totalCount)
 	if err != nil {
+		log.Printf("[Repository] ERROR: Failed to count posts: %v", err)
 		return nil, 0, fmt.Errorf("failed to count posts: %w", err)
 	}
+	log.Printf("[Repository] Total posts in DB: %d", totalCount)
 
 	// Get posts
 	query := `
 		SELECT 
 			bp.id, bp.user_id, u.username, u.profile_image_url,
-			bp.caption, bp.image_url, bp.location, bp.timestamp,
+			bp.caption, bp.image_data, bp.location, bp.timestamp,
 			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
 		FROM beer_posts bp
 		JOIN users u ON bp.user_id = u.id
@@ -123,27 +139,34 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 		LIMIT ? OFFSET ?
 	`
 
+	log.Printf("[Repository] Executing query with limit: %d, offset: %d", limit, offset)
 	rows, err := r.db.Query(query, limit, offset)
 	if err != nil {
+		log.Printf("[Repository] ERROR: Query execution failed: %v", err)
 		return nil, 0, fmt.Errorf("failed to get posts: %w", err)
 	}
 	defer rows.Close()
 
 	posts := []models.BeerPost{}
+	postCount := 0
 	for rows.Next() {
+		postCount++
 		post := models.BeerPost{}
 		err := rows.Scan(
 			&post.ID, &post.UserID, &post.Username, &post.UserProfileImage,
-			&post.Caption, &post.ImageURL, &post.Location, &post.Timestamp,
+			&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
 			&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
 		)
 		if err != nil {
+			log.Printf("[Repository] ERROR: Failed to scan post row %d: %v", postCount, err)
 			return nil, 0, fmt.Errorf("failed to scan post: %w", err)
 		}
+		log.Printf("[Repository] Scanned post %d - ID: %s", postCount, post.ID)
 
 		// Get comments for each post
 		comments, err := r.GetCommentsByPostID(post.ID)
 		if err != nil {
+			log.Printf("[Repository] ERROR: Failed to get comments for post %s: %v", post.ID, err)
 			return nil, 0, err
 		}
 		post.Comments = comments
@@ -160,6 +183,7 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 		posts = append(posts, post)
 	}
 
+	log.Printf("[Repository] GetPosts successful - returning %d posts (total: %d)", len(posts), totalCount)
 	return posts, totalCount, nil
 }
 
