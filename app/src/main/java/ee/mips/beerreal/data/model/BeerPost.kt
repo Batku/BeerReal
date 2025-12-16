@@ -8,7 +8,7 @@ data class BeerPost(
     val username: String,
     val userProfileImage: String? = null,
     val caption: String,
-    val imageUrl: String,
+    val imageData: String,
     val location: String? = null,
     val timestamp: Date,
     val upvotes: Int = 0,

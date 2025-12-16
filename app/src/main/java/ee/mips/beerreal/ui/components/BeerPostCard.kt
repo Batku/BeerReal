@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import ee.mips.beerreal.data.model.BeerPost
 import ee.mips.beerreal.data.model.VoteType
 import java.text.SimpleDateFormat
@@ -96,21 +97,17 @@ fun BeerPostCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Beer image placeholder
-            Box(
+            // Beer image
+            AsyncImage(
+                model = post.imageData,
+                contentDescription = "Beer Photo",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(300.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🍺 Beer Photo",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+                contentScale = ContentScale.Crop
+            )
             
             Spacer(modifier = Modifier.height(12.dp))
             

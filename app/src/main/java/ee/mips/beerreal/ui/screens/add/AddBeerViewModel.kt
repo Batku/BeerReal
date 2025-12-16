@@ -25,7 +25,7 @@ data class ValidationErrors(
 )
 
 class AddBeerViewModel(
-    private val repository: BeerRepository = BeerRepository()
+    private val repository: BeerRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AddBeerUiState())
