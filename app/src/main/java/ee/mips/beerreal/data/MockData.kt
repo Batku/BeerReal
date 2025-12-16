@@ -13,7 +13,7 @@ object MockData {
         id = "user1",
         username = "beermanAlrightman",
         email = "beerman@example.com",
-        profileimageData = null,
+        //profileimageData = null,
         tasteScore = 850,
         totalPosts = 42,
         friendsCount = 156,

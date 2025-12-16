@@ -19,7 +19,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class BeerRepository(
-    private val context: Context,
+    private val context: Context? = null,
     private val apiService: BeerApiService = RetrofitClient.apiService,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
@@ -87,6 +87,9 @@ class BeerRepository(
             
             // Convert image to Base64
             Log.d("BeerRepository", "Converting image to Base64...")
+            if (context == null) {
+                throw Exception("Context is required for image processing")
+            }
             val inputStream = context.contentResolver.openInputStream(imageUri)
             val bytes = inputStream?.readBytes()
             inputStream?.close()

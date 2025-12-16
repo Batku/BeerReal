@@ -31,6 +31,11 @@ import ee.mips.beerreal.ui.screens.settings.SettingsScreen
 import ee.mips.beerreal.ui.screens.map.MapScreen
 import ee.mips.beerreal.ui.screens.login.LoginScreen
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.platform.LocalContext
+import ee.mips.beerreal.data.repository.BeerRepository
+import ee.mips.beerreal.ui.screens.home.HomeViewModel
+import ee.mips.beerreal.ui.screens.post.PostDetailViewModel
+import ee.mips.beerreal.ui.screens.profile.ProfileViewModel
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
     object Login : Screen("login", "Login")
