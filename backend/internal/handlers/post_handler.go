@@ -144,5 +144,77 @@ func (h *PostHandler) RegisterRoutes(router *gin.RouterGroup, authMiddleware gin
 
 		// Protected routes (auth required)
 		posts.POST("", authMiddleware, h.CreatePost)
+		posts.POST("/vote", authMiddleware, h.VotePost)
+		posts.POST("/comment", authMiddleware, h.AddComment)
 	}
+}
+
+// VotePost godoc
+// @Summary Vote on a post
+// @Description Upvote or downvote a post
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param vote body models.VoteRequest true "Vote details"
+// @Success 200 {object} models.VoteResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/posts/vote [post]
+func (h *PostHandler) VotePost(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req models.VoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := h.service.VotePost(userID, &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// AddComment godoc
+// @Summary Add a comment to a post
+// @Description Add a comment to a post
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param comment body models.AddCommentRequest true "Comment details"
+// @Success 201 {object} models.Comment
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/posts/comment [post]
+func (h *PostHandler) AddComment(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req models.AddCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	comment, err := h.service.AddComment(userID, &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, comment)
 }

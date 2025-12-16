@@ -6,7 +6,7 @@ data class BeerPost(
     val id: String,
     val userId: String,
     val username: String,
-    val userProfileImage: String? = null,
+    val userProfileImageData: String? = null,
     val caption: String,
     val imageData: String,
     val location: String? = null,
@@ -22,7 +22,7 @@ data class Comment(
     val id: String,
     val userId: String,
     val username: String,
-    val userProfileImage: String? = null,
+    val userProfileImageData: String? = null,
     val text: String,
     val timestamp: Date
 )

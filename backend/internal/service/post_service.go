@@ -3,9 +3,11 @@ package service
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/batku/beerreal/internal/models"
 	"github.com/batku/beerreal/internal/repository"
+	"github.com/google/uuid"
 )
 
 type PostService interface {
@@ -13,14 +15,20 @@ type PostService interface {
 	GetPostByID(postID string, userID string) (*models.BeerPost, error)
 	GetPosts(userID string, page, pageSize int) (*models.GetPostsResponse, error)
 	EnsureUserExists(userID, email, username string) error
+	VotePost(userID string, req *models.VoteRequest) (*models.VoteResponse, error)
+	AddComment(userID string, req *models.AddCommentRequest) (*models.Comment, error)
 }
 
 type postService struct {
-	repo repository.PostRepository
+	repo     repository.PostRepository
+	userRepo repository.UserRepository
 }
 
-func NewPostService(repo repository.PostRepository) PostService {
-	return &postService{repo: repo}
+func NewPostService(repo repository.PostRepository, userRepo repository.UserRepository) PostService {
+	return &postService{
+		repo:     repo,
+		userRepo: userRepo,
+	}
 }
 
 func (s *postService) CreatePost(userID string, req *models.CreatePostRequest) (*models.BeerPost, error) {
@@ -38,13 +46,13 @@ func (s *postService) CreatePost(userID string, req *models.CreatePostRequest) (
 	log.Printf("[PostService] User found: %s", user.Username)
 
 	post := &models.BeerPost{
-		UserID:           userID,
-		Username:         user.Username,
-		UserProfileImage: user.ProfileImageURL,
-		Caption:          req.Caption,
-		ImageData:        req.ImageData,
-		Location:         req.Location,
-		Comments:         []models.Comment{},
+		UserID:               userID,
+		Username:             user.Username,
+		UserProfileImageData: user.ProfileImageData,
+		Caption:              req.Caption,
+		ImageData:            req.ImageData,
+		Location:             req.Location,
+		Comments:             []models.Comment{},
 	}
 
 	log.Println("[PostService] Calling repository to create post")
@@ -113,4 +121,130 @@ func (s *postService) EnsureUserExists(userID, email, username string) error {
 	}
 
 	return nil
+}
+
+func (s *postService) VotePost(userID string, req *models.VoteRequest) (*models.VoteResponse, error) {
+	// Check if post exists
+	post, err := s.repo.GetPostByID(req.PostID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get post: %w", err)
+	}
+	if post == nil {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	// Check if user already voted
+	existingVote, err := s.repo.GetVoteByUserAndPost(userID, req.PostID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing vote: %w", err)
+	}
+
+	var scoreChange int
+	var upvoteChange, downvoteChange int
+
+	if existingVote != nil {
+		if existingVote.VoteType == req.VoteType {
+			// Remove vote (toggle off)
+			if err := s.repo.DeleteVote(existingVote.ID); err != nil {
+				return nil, fmt.Errorf("failed to delete vote: %w", err)
+			}
+			if req.VoteType == "upvote" {
+				scoreChange = -1
+				upvoteChange = -1
+			} else {
+				scoreChange = 1
+				downvoteChange = -1
+			}
+		} else {
+			// Change vote type
+			existingVote.VoteType = req.VoteType
+			existingVote.UpdatedAt = time.Now()
+			if err := s.repo.UpdateVote(existingVote); err != nil {
+				return nil, fmt.Errorf("failed to update vote: %w", err)
+			}
+			if req.VoteType == "upvote" {
+				scoreChange = 2 // -(-1) + 1 = 2
+				upvoteChange = 1
+				downvoteChange = -1
+			} else {
+				scoreChange = -2 // -(1) + (-1) = -2
+				upvoteChange = -1
+				downvoteChange = 1
+			}
+		}
+	} else {
+		// New vote
+		newVote := &models.Vote{
+			ID:        uuid.New().String(),
+			PostID:    req.PostID,
+			UserID:    userID,
+			VoteType:  req.VoteType,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := s.repo.AddVote(newVote); err != nil {
+			return nil, fmt.Errorf("failed to add vote: %w", err)
+		}
+		if req.VoteType == "upvote" {
+			scoreChange = 1
+			upvoteChange = 1
+		} else {
+			scoreChange = -1
+			downvoteChange = 1
+		}
+	}
+
+	// Update post vote counts
+	newUpvotes := post.Upvotes + upvoteChange
+	newDownvotes := post.Downvotes + downvoteChange
+	if err := s.repo.UpdatePostVotes(post.ID, newUpvotes, newDownvotes); err != nil {
+		return nil, fmt.Errorf("failed to update post votes: %w", err)
+	}
+
+	// Update user taste score (author of the post)
+	if scoreChange != 0 {
+		if err := s.userRepo.UpdateTasteScore(post.UserID, scoreChange); err != nil {
+			log.Printf("[PostService] ERROR: Failed to update taste score for user %s: %v", post.UserID, err)
+			// Don't fail the request if taste score update fails
+		}
+	}
+
+	return &models.VoteResponse{
+		Upvotes:   newUpvotes,
+		Downvotes: newDownvotes,
+	}, nil
+}
+
+func (s *postService) AddComment(userID string, req *models.AddCommentRequest) (*models.Comment, error) {
+	// Check if post exists
+	post, err := s.repo.GetPostByID(req.PostID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get post: %w", err)
+	}
+	if post == nil {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	comment := &models.Comment{
+		ID:                   uuid.New().String(),
+		PostID:               req.PostID,
+		UserID:               userID,
+		Username:             user.Username,
+		UserProfileImageData: user.ProfileImageData,
+		Text:                 req.Text,
+		Timestamp:            time.Now(),
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
+	}
+
+	if err := s.repo.AddComment(comment); err != nil {
+		return nil, fmt.Errorf("failed to add comment: %w", err)
+	}
+
+	return comment, nil
 }

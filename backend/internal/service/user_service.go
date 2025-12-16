@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -9,10 +10,10 @@ import (
 )
 
 type UserService struct {
-	repo *repository.UserRepository
+	repo repository.UserRepository
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
+func NewUserService(repo repository.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
@@ -41,10 +42,37 @@ func (s *UserService) GetOrCreateUser(id, email string) (*models.User, error) {
 		UpdatedAt:    now,
 	}
 
-	err = s.repo.CreateUser(newUser)
+	err = s.repo.CreateOrUpdateUser(newUser)
 	if err != nil {
 		return nil, err
 	}
 
 	return newUser, nil
 }
+
+func (s *UserService) UpdateUser(userID string, req *models.UpdateUserRequest) (*models.User, error) {
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	if req.Username != "" {
+		user.Username = req.Username
+	}
+	if req.ProfileImageData != "" {
+		val := req.ProfileImageData
+		user.ProfileImageData = &val
+	}
+
+	user.UpdatedAt = time.Now()
+
+	if err := s.repo.UpdateUser(user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+

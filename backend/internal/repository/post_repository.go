@@ -18,6 +18,11 @@ type PostRepository interface {
 	CreateOrUpdateUser(user *models.User) error
 	GetCommentsByPostID(postID string) ([]models.Comment, error)
 	GetVoteByUserAndPost(userID, postID string) (*models.Vote, error)
+	AddVote(vote *models.Vote) error
+	UpdateVote(vote *models.Vote) error
+	DeleteVote(voteID string) error
+	UpdatePostVotes(postID string, upvotes, downvotes int) error
+	AddComment(comment *models.Comment) error
 }
 
 type postRepository struct {
@@ -69,7 +74,7 @@ func (r *postRepository) GetPostByID(postID string, userID string) (*models.Beer
 	log.Printf("[Repository] GetPostByID called - postID: %s, userID: %s", postID, userID)
 	query := `
 		SELECT 
-			bp.id, bp.user_id, u.username, u.profile_image_url,
+			bp.id, bp.user_id, u.username, u.profile_image_data,
 			bp.caption, bp.image_data, bp.location, bp.timestamp,
 			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
 		FROM beer_posts bp
@@ -79,7 +84,7 @@ func (r *postRepository) GetPostByID(postID string, userID string) (*models.Beer
 
 	post := &models.BeerPost{}
 	err := r.db.QueryRow(query, postID).Scan(
-		&post.ID, &post.UserID, &post.Username, &post.UserProfileImage,
+		&post.ID, &post.UserID, &post.Username, &post.UserProfileImageData,
 		&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
 		&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
 	)
@@ -130,7 +135,7 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 	// Get posts
 	query := `
 		SELECT 
-			bp.id, bp.user_id, u.username, u.profile_image_url,
+			bp.id, bp.user_id, u.username, u.profile_image_data,
 			bp.caption, bp.image_data, bp.location, bp.timestamp,
 			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
 		FROM beer_posts bp
@@ -153,7 +158,7 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 		postCount++
 		post := models.BeerPost{}
 		err := rows.Scan(
-			&post.ID, &post.UserID, &post.Username, &post.UserProfileImage,
+			&post.ID, &post.UserID, &post.Username, &post.UserProfileImageData,
 			&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
 			&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
 		)
@@ -189,14 +194,14 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 
 func (r *postRepository) GetUserByID(userID string) (*models.User, error) {
 	query := `
-		SELECT id, username, email, profile_image_url, taste_score, 
+		SELECT id, username, email, profile_image_data, taste_score, 
 		       total_posts, friends_count, joined_date, bio, created_at, updated_at
 		FROM users WHERE id = ?
 	`
 
 	user := &models.User{}
 	err := r.db.QueryRow(query, userID).Scan(
-		&user.ID, &user.Username, &user.Email, &user.ProfileImageURL,
+		&user.ID, &user.Username, &user.Email, &user.ProfileImageData,
 		&user.TasteScore, &user.TotalPosts, &user.FriendsCount,
 		&user.JoinedDate, &user.Bio, &user.CreatedAt, &user.UpdatedAt,
 	)
@@ -220,7 +225,7 @@ func (r *postRepository) CreateOrUpdateUser(user *models.User) error {
 	if existingUser == nil {
 		// Create new user
 		query := `
-			INSERT INTO users (id, username, email, profile_image_url, taste_score, 
+			INSERT INTO users (id, username, email, profile_image_data, taste_score, 
 			                   total_posts, friends_count, joined_date, bio, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`
@@ -228,7 +233,7 @@ func (r *postRepository) CreateOrUpdateUser(user *models.User) error {
 		user.CreatedAt = time.Now()
 		user.UpdatedAt = time.Now()
 
-		_, err = r.db.Exec(query, user.ID, user.Username, user.Email, user.ProfileImageURL,
+		_, err = r.db.Exec(query, user.ID, user.Username, user.Email, user.ProfileImageData,
 			user.TasteScore, user.TotalPosts, user.FriendsCount, user.JoinedDate,
 			user.Bio, user.CreatedAt, user.UpdatedAt)
 
@@ -238,18 +243,18 @@ func (r *postRepository) CreateOrUpdateUser(user *models.User) error {
 	// Update existing user
 	query := `
 		UPDATE users 
-		SET username = ?, email = ?, profile_image_url = ?, updated_at = ?
+		SET username = ?, email = ?, profile_image_data = ?, updated_at = ?
 		WHERE id = ?
 	`
 	user.UpdatedAt = time.Now()
-	_, err = r.db.Exec(query, user.Username, user.Email, user.ProfileImageURL, user.UpdatedAt, user.ID)
+	_, err = r.db.Exec(query, user.Username, user.Email, user.ProfileImageData, user.UpdatedAt, user.ID)
 
 	return err
 }
 
 func (r *postRepository) GetCommentsByPostID(postID string) ([]models.Comment, error) {
 	query := `
-		SELECT c.id, c.post_id, c.user_id, u.username, u.profile_image_url,
+		SELECT c.id, c.post_id, c.user_id, u.username, u.profile_image_data,
 		       c.text, c.timestamp, c.created_at, c.updated_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
@@ -268,7 +273,7 @@ func (r *postRepository) GetCommentsByPostID(postID string) ([]models.Comment, e
 		comment := models.Comment{}
 		err := rows.Scan(
 			&comment.ID, &comment.PostID, &comment.UserID, &comment.Username,
-			&comment.UserProfileImage, &comment.Text, &comment.Timestamp,
+			&comment.UserProfileImageData, &comment.Text, &comment.Timestamp,
 			&comment.CreatedAt, &comment.UpdatedAt,
 		)
 		if err != nil {
@@ -297,4 +302,58 @@ func (r *postRepository) GetVoteByUserAndPost(userID, postID string) (*models.Vo
 	}
 
 	return vote, nil
+}
+
+func (r *postRepository) AddVote(vote *models.Vote) error {
+	query := `
+		INSERT INTO votes (id, post_id, user_id, vote_type, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	_, err := r.db.Exec(query, vote.ID, vote.PostID, vote.UserID, vote.VoteType, vote.CreatedAt, vote.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to add vote: %w", err)
+	}
+	return nil
+}
+
+func (r *postRepository) UpdateVote(vote *models.Vote) error {
+	query := `
+		UPDATE votes SET vote_type = ?, updated_at = ?
+		WHERE id = ?
+	`
+	_, err := r.db.Exec(query, vote.VoteType, vote.UpdatedAt, vote.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update vote: %w", err)
+	}
+	return nil
+}
+
+func (r *postRepository) DeleteVote(voteID string) error {
+	query := `DELETE FROM votes WHERE id = ?`
+	_, err := r.db.Exec(query, voteID)
+	if err != nil {
+		return fmt.Errorf("failed to delete vote: %w", err)
+	}
+	return nil
+}
+
+func (r *postRepository) UpdatePostVotes(postID string, upvotes, downvotes int) error {
+	query := `UPDATE beer_posts SET upvotes = ?, downvotes = ? WHERE id = ?`
+	_, err := r.db.Exec(query, upvotes, downvotes, postID)
+	if err != nil {
+		return fmt.Errorf("failed to update post votes: %w", err)
+	}
+	return nil
+}
+
+func (r *postRepository) AddComment(comment *models.Comment) error {
+	query := `
+		INSERT INTO comments (id, post_id, user_id, text, timestamp, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+	_, err := r.db.Exec(query, comment.ID, comment.PostID, comment.UserID, comment.Text, comment.Timestamp, comment.CreatedAt, comment.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to add comment: %w", err)
+	}
+	return nil
 }

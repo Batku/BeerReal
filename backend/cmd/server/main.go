@@ -34,10 +34,11 @@ func main() {
 
 	// Initialize repository, service, and handler layers
 	postRepo := repository.NewPostRepository(db.DB)
-	postService := service.NewPostService(postRepo)
+	userRepo := repository.NewUserRepository(db.DB)
+
+	postService := service.NewPostService(postRepo, userRepo)
 	postHandler := handlers.NewPostHandler(postService)
 
-	userRepo := repository.NewUserRepository(db.DB)
 	userService := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 

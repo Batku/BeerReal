@@ -6,7 +6,7 @@ data class User(
     val id: String,
     val username: String,
     val email: String,
-    val profileImageUrl: String? = null,
+    val profileImageData: String? = null,
     val tasteScore: Int = 0,
     val totalPosts: Int = 0,
     val friendsCount: Int = 0,
