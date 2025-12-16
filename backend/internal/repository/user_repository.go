@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/batku/beerreal/internal/models"
 )
