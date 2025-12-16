@@ -20,7 +20,7 @@ data class ProfileUiState(
 )
 
 class ProfileViewModel(
-    private val repository: BeerRepository
+    private val repository: BeerRepository = BeerRepository()
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())

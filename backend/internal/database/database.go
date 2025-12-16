@@ -51,7 +51,7 @@ func (d *Database) migrate() error {
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
 			caption TEXT NOT NULL,
-			image_data TEXT NOT NULL,
+			image_url TEXT NOT NULL,
 			location TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			upvotes INTEGER DEFAULT 0,

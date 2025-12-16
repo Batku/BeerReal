@@ -40,6 +40,6 @@ data class GetPostsResponse(
 
 data class CreatePostRequest(
     val caption: String,
-    val imageData: String,
+    val imageUrl: String,
     val location: String? = null
 )

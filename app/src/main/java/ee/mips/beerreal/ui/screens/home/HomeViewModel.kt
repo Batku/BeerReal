@@ -17,7 +17,7 @@ data class HomeUiState(
 )
 
 class HomeViewModel(
-    private val repository: BeerRepository
+    private val repository: BeerRepository = BeerRepository()
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(HomeUiState())

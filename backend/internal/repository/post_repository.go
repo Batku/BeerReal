@@ -29,7 +29,7 @@ func NewPostRepository(db *sql.DB) PostRepository {
 
 func (r *postRepository) CreatePost(post *models.BeerPost) error {
 	query := `
-		INSERT INTO beer_posts (id, user_id, caption, image_data, location, timestamp, upvotes, downvotes, created_at, updated_at)
+		INSERT INTO beer_posts (id, user_id, caption, image_url, location, timestamp, upvotes, downvotes, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
@@ -40,7 +40,7 @@ func (r *postRepository) CreatePost(post *models.BeerPost) error {
 	post.Upvotes = 0
 	post.Downvotes = 0
 
-	_, err := r.db.Exec(query, post.ID, post.UserID, post.Caption, post.ImageData,
+	_, err := r.db.Exec(query, post.ID, post.UserID, post.Caption, post.ImageURL,
 		post.Location, post.Timestamp, post.Upvotes, post.Downvotes,
 		post.CreatedAt, post.UpdatedAt)
 
@@ -62,7 +62,7 @@ func (r *postRepository) GetPostByID(postID string, userID string) (*models.Beer
 	query := `
 		SELECT 
 			bp.id, bp.user_id, u.username, u.profile_image_url,
-			bp.caption, bp.image_data, bp.location, bp.timestamp,
+			bp.caption, bp.image_url, bp.location, bp.timestamp,
 			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
 		FROM beer_posts bp
 		JOIN users u ON bp.user_id = u.id
@@ -72,7 +72,7 @@ func (r *postRepository) GetPostByID(postID string, userID string) (*models.Beer
 	post := &models.BeerPost{}
 	err := r.db.QueryRow(query, postID).Scan(
 		&post.ID, &post.UserID, &post.Username, &post.UserProfileImage,
-		&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
+		&post.Caption, &post.ImageURL, &post.Location, &post.Timestamp,
 		&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
 	)
 
@@ -115,7 +115,7 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 	query := `
 		SELECT 
 			bp.id, bp.user_id, u.username, u.profile_image_url,
-			bp.caption, bp.image_data, bp.location, bp.timestamp,
+			bp.caption, bp.image_url, bp.location, bp.timestamp,
 			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
 		FROM beer_posts bp
 		JOIN users u ON bp.user_id = u.id
@@ -134,7 +134,7 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 		post := models.BeerPost{}
 		err := rows.Scan(
 			&post.ID, &post.UserID, &post.Username, &post.UserProfileImage,
-			&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
+			&post.Caption, &post.ImageURL, &post.Location, &post.Timestamp,
 			&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
 		)
 		if err != nil {
