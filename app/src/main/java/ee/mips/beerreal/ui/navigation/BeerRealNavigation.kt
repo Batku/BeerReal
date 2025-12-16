@@ -36,6 +36,13 @@ import ee.mips.beerreal.data.repository.BeerRepository
 import ee.mips.beerreal.ui.screens.home.HomeViewModel
 import ee.mips.beerreal.ui.screens.post.PostDetailViewModel
 import ee.mips.beerreal.ui.screens.profile.ProfileViewModel
+import ee.mips.beerreal.MainViewModel
+import ee.mips.beerreal.AppState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.collectAsState
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
     object Login : Screen("login", "Login")
@@ -53,29 +60,59 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeerRealApp() {
-    val navController = rememberNavController()
-    var homeScrollToTop by remember { mutableStateOf(0) }
-    var profileScrollToTop by remember { mutableStateOf(0) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    
-    Scaffold(
-        bottomBar = {
-            if (currentRoute != Screen.Login.route && currentRoute != Screen.Camera.route) {
-                BottomNavigation(
+    val context = LocalContext.current
+    val repository = remember { BeerRepository(context) }
+    val mainViewModel: MainViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return MainViewModel(repository) as T
+            }
+        }
+    )
+    val appState by mainViewModel.appState.collectAsState()
+
+    when (val state = appState) {
+        is AppState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is AppState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Error: ${state.message}")
+                    Button(onClick = { mainViewModel.checkUser() }) {
+                        Text("Retry")
+                    }
+                }
+            }
+        }
+        is AppState.Ready -> {
+            val navController = rememberNavController()
+            var homeScrollToTop by remember { mutableStateOf(0) }
+            var profileScrollToTop by remember { mutableStateOf(0) }
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route
+            
+            Scaffold(
+                bottomBar = {
+                    if (currentRoute != Screen.Login.route && currentRoute != Screen.Camera.route) {
+                        BottomNavigation(
+                            navController = navController,
+                            onHomeScrollToTop = { homeScrollToTop++ },
+                            onProfileScrollToTop = { profileScrollToTop++ }
+                        )
+                    }
+                }
+            ) { innerPadding ->
+                BeerRealNavHost(
                     navController = navController,
-                    onHomeScrollToTop = { homeScrollToTop++ },
-                    onProfileScrollToTop = { profileScrollToTop++ }
+                    modifier = Modifier.padding(innerPadding),
+                    homeScrollToTop = homeScrollToTop,
+                    profileScrollToTop = profileScrollToTop
                 )
             }
         }
-    ) { innerPadding ->
-        BeerRealNavHost(
-            navController = navController,
-            modifier = Modifier.padding(innerPadding),
-            homeScrollToTop = homeScrollToTop,
-            profileScrollToTop = profileScrollToTop
-        )
     }
 }
 

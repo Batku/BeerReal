@@ -37,6 +37,10 @@ func main() {
 	postService := service.NewPostService(postRepo)
 	postHandler := handlers.NewPostHandler(postService)
 
+	userRepo := repository.NewUserRepository(db.DB)
+	userService := service.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
+
 	// Setup router
 	router := gin.Default()
 
@@ -68,6 +72,8 @@ func main() {
 	{
 		// Register post routes
 		postHandler.RegisterRoutes(api, firebaseAuth.AuthMiddleware())
+		// Register user routes
+		userHandler.RegisterRoutes(api, firebaseAuth.AuthMiddleware())
 	}
 
 	// Start server

@@ -9,7 +9,14 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+import ee.mips.beerreal.data.model.User
+
 interface BeerApiService {
+
+    @GET("api/me")
+    suspend fun getMe(
+        @Header("Authorization") token: String
+    ): Response<User>
 
     @GET("api/posts")
     suspend fun getPosts(

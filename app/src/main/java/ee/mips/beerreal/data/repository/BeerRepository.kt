@@ -46,9 +46,24 @@ class BeerRepository(
         }
     }
     
-    fun getCurrentUser(): Flow<User> = flow {
-        delay(200)
-        emit(MockData.currentUser)
+    fun getCurrentUser(): Flow<User?> = flow {
+        try {
+            val token = auth.currentUser?.getIdToken(false)?.await()?.token
+            if (token != null) {
+                val response = apiService.getMe("Bearer $token")
+                if (response.isSuccessful) {
+                    emit(response.body())
+                } else {
+                    Log.e("BeerRepository", "Failed to fetch user: ${response.code()} ${response.message()}")
+                    emit(null)
+                }
+            } else {
+                emit(null)
+            }
+        } catch (e: Exception) {
+            Log.e("BeerRepository", "Error fetching user", e)
+            emit(null)
+        }
     }
     
     fun getUserPosts(userId: String): Flow<List<BeerPost>> = flow {
