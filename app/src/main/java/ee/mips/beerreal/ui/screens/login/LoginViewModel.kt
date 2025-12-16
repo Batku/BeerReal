@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import android.util.Log
 
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.GoogleAuthProvider
@@ -17,8 +18,6 @@ data class LoginUiState(
     val error: String? = null,
     val isLoggedIn: Boolean = false
 )
-
-import android.util.Log
 
 class LoginViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
