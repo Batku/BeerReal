@@ -78,7 +78,7 @@ func main() {
 
 	// Start server
 	log.Printf("Starting BeerReal server on port %s", cfg.Port)
-	if err := router.Run(":" + cfg.Port); err != nil {
+	if err := router.Run("0.0.0.0:" + cfg.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
