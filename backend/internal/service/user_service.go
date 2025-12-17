@@ -28,7 +28,19 @@ func (s *UserService) GetOrCreateUser(id, email string) (*models.User, error) {
 	}
 
 	// User doesn't exist, create new one
-	username := strings.Split(email, "@")[0]
+	var username string
+	if email == "" {
+		// Generate placeholder data for users without email (e.g. anonymous auth)
+		shortID := id
+		if len(id) > 8 {
+			shortID = id[:8]
+		}
+		username = fmt.Sprintf("user_%s", shortID)
+		email = fmt.Sprintf("%s@anonymous.beerreal", username)
+	} else {
+		username = strings.Split(email, "@")[0]
+	}
+
 	now := time.Now()
 	newUser := &models.User{
 		ID:           id,
@@ -75,4 +87,3 @@ func (s *UserService) UpdateUser(userID string, req *models.UpdateUserRequest) (
 
 	return user, nil
 }
-

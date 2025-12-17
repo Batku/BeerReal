@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/batku/beerreal/internal/models"
@@ -23,14 +24,16 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	email, exists := c.Get("email")
-	if !exists {
-		// Email might not be available depending on provider, but for now let's assume it is or handle it
-		email = "" 
+	var email string
+	if emailVal, exists := c.Get("email"); exists && emailVal != nil {
+		if e, ok := emailVal.(string); ok {
+			email = e
+		}
 	}
 
-	user, err := h.service.GetOrCreateUser(userID.(string), email.(string))
+	user, err := h.service.GetOrCreateUser(userID.(string), email)
 	if err != nil {
+		log.Printf("[UserHandler] GetMe error: Failed to get or create user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get or create user"})
 		return
 	}
@@ -65,4 +68,3 @@ func (h *UserHandler) RegisterRoutes(router *gin.RouterGroup, authMiddleware gin
 	router.GET("/me", authMiddleware, h.GetMe)
 	router.PUT("/me", authMiddleware, h.UpdateUser)
 }
-
