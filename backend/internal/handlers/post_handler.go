@@ -135,12 +135,12 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 }
 
 // RegisterRoutes registers all post-related routes
-func (h *PostHandler) RegisterRoutes(router *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *PostHandler) RegisterRoutes(router *gin.RouterGroup, authMiddleware gin.HandlerFunc, optionalAuthMiddleware gin.HandlerFunc) {
 	posts := router.Group("/posts")
 	{
-		// Public routes (no auth required)
-		posts.GET("", h.GetPosts)
-		posts.GET("/:id", h.GetPost)
+		// Public routes (no auth required, but optional auth for user context)
+		posts.GET("", optionalAuthMiddleware, h.GetPosts)
+		posts.GET("/:id", optionalAuthMiddleware, h.GetPost)
 
 		// Protected routes (auth required)
 		posts.POST("", authMiddleware, h.CreatePost)

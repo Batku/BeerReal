@@ -148,7 +148,7 @@ func (s *postService) VotePost(userID string, req *models.VoteRequest) (*models.
 			if err := s.repo.DeleteVote(existingVote.ID); err != nil {
 				return nil, fmt.Errorf("failed to delete vote: %w", err)
 			}
-			if req.VoteType == "upvote" {
+			if req.VoteType == models.VoteTypeUpvote {
 				scoreChange = -1
 				upvoteChange = -1
 			} else {
@@ -162,7 +162,7 @@ func (s *postService) VotePost(userID string, req *models.VoteRequest) (*models.
 			if err := s.repo.UpdateVote(existingVote); err != nil {
 				return nil, fmt.Errorf("failed to update vote: %w", err)
 			}
-			if req.VoteType == "upvote" {
+			if req.VoteType == models.VoteTypeUpvote {
 				scoreChange = 2 // -(-1) + 1 = 2
 				upvoteChange = 1
 				downvoteChange = -1
@@ -185,7 +185,7 @@ func (s *postService) VotePost(userID string, req *models.VoteRequest) (*models.
 		if err := s.repo.AddVote(newVote); err != nil {
 			return nil, fmt.Errorf("failed to add vote: %w", err)
 		}
-		if req.VoteType == "upvote" {
+		if req.VoteType == models.VoteTypeUpvote {
 			scoreChange = 1
 			upvoteChange = 1
 		} else {

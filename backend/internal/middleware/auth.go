@@ -67,6 +67,24 @@ func (fa *FirebaseAuth) AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
+func (fa *FirebaseAuth) OptionalAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token := parts[1]
+				decodedToken, err := fa.client.VerifyIDToken(context.Background(), token)
+				if err == nil {
+					c.Set("userID", decodedToken.UID)
+					c.Set("email", decodedToken.Claims["email"])
+				}
+			}
+		}
+		c.Next()
+	}
+}
+
 // Helper function to get user ID from context
 func GetUserID(c *gin.Context) (string, bool) {
 	userID, exists := c.Get("userID")

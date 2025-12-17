@@ -72,7 +72,7 @@ func main() {
 	api := router.Group("/api")
 	{
 		// Register post routes
-		postHandler.RegisterRoutes(api, firebaseAuth.AuthMiddleware())
+		postHandler.RegisterRoutes(api, firebaseAuth.AuthMiddleware(), firebaseAuth.OptionalAuthMiddleware())
 		// Register user routes
 		userHandler.RegisterRoutes(api, firebaseAuth.AuthMiddleware())
 	}
