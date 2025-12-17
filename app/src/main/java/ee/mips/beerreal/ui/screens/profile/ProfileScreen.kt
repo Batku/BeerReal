@@ -31,6 +31,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
 import ee.mips.beerreal.data.model.User
+import androidx.compose.foundation.Image
+import ee.mips.beerreal.util.rememberBase64Image
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -227,8 +229,6 @@ fun ProfileScreen(
     }
 }
 
-import androidx.compose.foundation.Image
-import ee.mips.beerreal.util.rememberBase64Image
 
 @Composable
 private fun ProfileHeader(
