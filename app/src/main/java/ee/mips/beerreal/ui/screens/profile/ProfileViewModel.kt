@@ -85,6 +85,32 @@ class ProfileViewModel(
         }
     }
     
+    fun updateProfile(username: String?, profileImageUri: android.net.Uri?, bio: String?) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val result = repository.updateUser(username, profileImageUri, bio)
+                result.onSuccess { updatedUser ->
+                    _uiState.value = _uiState.value.copy(
+                        user = updatedUser,
+                        isLoading = false
+                    )
+                }
+                result.onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to update profile: ${e.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Failed to update profile: ${e.message}"
+                )
+            }
+        }
+    }
+
     fun refreshProfile() {
         loadCurrentUser()
         loadUserPosts()

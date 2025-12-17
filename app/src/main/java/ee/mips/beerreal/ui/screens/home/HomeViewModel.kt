@@ -51,9 +51,15 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 val result = repository.voteOnPost(postId, voteType)
-                result.onSuccess { updatedPost ->
+                result.onSuccess { voteResponse ->
                     val updatedPosts = _uiState.value.posts.map { post ->
-                        if (post.id == postId) updatedPost else post
+                        if (post.id == postId) {
+                            post.copy(
+                                upvotes = voteResponse.upvotes,
+                                downvotes = voteResponse.downvotes,
+                                userVoteType = if (post.userVoteType == voteType) null else voteType
+                            )
+                        } else post
                     }
                     _uiState.value = _uiState.value.copy(posts = updatedPosts)
                 }

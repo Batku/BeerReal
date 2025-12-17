@@ -36,6 +36,24 @@ interface BeerApiService {
         @Body request: CreatePostRequest,
         @Header("Authorization") token: String
     ): Response<BeerPost>
+
+    @POST("api/posts/vote")
+    suspend fun votePost(
+        @Body request: VoteRequest,
+        @Header("Authorization") token: String
+    ): Response<VoteResponse>
+
+    @POST("api/posts/comment")
+    suspend fun addComment(
+        @Body request: AddCommentRequest,
+        @Header("Authorization") token: String
+    ): Response<ee.mips.beerreal.data.model.Comment>
+
+    @retrofit2.http.PUT("api/me")
+    suspend fun updateUser(
+        @Body request: UpdateUserRequest,
+        @Header("Authorization") token: String
+    ): Response<User>
 }
 
 data class GetPostsResponse(
@@ -48,5 +66,28 @@ data class GetPostsResponse(
 data class CreatePostRequest(
     val caption: String,
     val imageData: String,
+    val location: String? = null
+)
+
+data class VoteRequest(
+    val postId: String,
+    val voteType: String // "UPVOTE" or "DOWNVOTE"
+)
+
+data class VoteResponse(
+    val upvotes: Int,
+    val downvotes: Int
+)
+
+data class AddCommentRequest(
+    val postId: String,
+    val text: String
+)
+
+data class UpdateUserRequest(
+    val username: String? = null,
+    val profileImageData: String? = null,
+    val bio: String? = null
+)
     val location: String? = null
 )

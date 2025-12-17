@@ -47,12 +47,45 @@ class PostDetailViewModel(
         viewModelScope.launch {
             try {
                 val result = repository.voteOnPost(postId, voteType)
-                result.onSuccess { updatedPost ->
-                    _uiState.value = _uiState.value.copy(post = updatedPost)
+                result.onSuccess { voteResponse ->
+                    val currentPost = _uiState.value.post
+                    if (currentPost != null && currentPost.id == postId) {
+                        val updatedPost = currentPost.copy(
+                            upvotes = voteResponse.upvotes,
+                            downvotes = voteResponse.downvotes,
+                            userVoteType = if (currentPost.userVoteType == voteType) null else voteType
+                        )
+                        _uiState.value = _uiState.value.copy(post = updatedPost)
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     errorMessage = "Failed to vote: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun addComment(postId: String, text: String) {
+        viewModelScope.launch {
+            try {
+                val result = repository.addComment(postId, text)
+                result.onSuccess { comment ->
+                    val currentPost = _uiState.value.post
+                    if (currentPost != null) {
+                        val updatedComments = currentPost.comments + comment
+                        val updatedPost = currentPost.copy(comments = updatedComments)
+                        _uiState.value = _uiState.value.copy(post = updatedPost)
+                    }
+                }
+                result.onFailure { e ->
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Failed to add comment: ${e.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Failed to add comment: ${e.message}"
                 )
             }
         }

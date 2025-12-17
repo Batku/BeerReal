@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ee.mips.beerreal.ui.screens.friends.FriendsDialog
 import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import ee.mips.beerreal.data.model.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +41,7 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val gridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
+    var showEditDialog by remember { mutableStateOf(false) }
     
     LaunchedEffect(scrollToTopTrigger) {
         if (scrollToTopTrigger > 0) {
@@ -196,6 +201,19 @@ fun ProfileScreen(
             }
         }
         
+        if (showEditDialog) {
+            uiState.user?.let { user ->
+                EditProfileDialog(
+                    user = user,
+                    onDismiss = { showEditDialog = false },
+                    onSave = { username, uri, bio ->
+                        viewModel.updateProfile(username, uri, bio)
+                        showEditDialog = false
+                    }
+                )
+            }
+        }
+
         if (uiState.showFriendsDialog) {
             FriendsDialog(
                 users = uiState.allUsers,
@@ -206,7 +224,11 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileHeader(user: ee.mips.beerreal.data.model.User) {
+@Composable
+private fun ProfileHeader(
+    user: ee.mips.beerreal.data.model.User,
+    onEditClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,19 +236,31 @@ private fun ProfileHeader(user: ee.mips.beerreal.data.model.User) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Profile picture
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = user.username.take(1).uppercase(),
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.Bold
+        if (user.profileImageData != null) {
+            AsyncImage(
+                model = user.profileImageData,
+                contentDescription = "Profile Picture",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentScale = ContentScale.Crop
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = user.username.take(1).uppercase(),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -274,7 +308,7 @@ private fun ProfileHeader(user: ee.mips.beerreal.data.model.User) {
         
         // Edit Profile Button
         Button(
-            onClick = { /* TODO: Edit profile */ },
+            onClick = onEditClick,
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
@@ -386,3 +420,87 @@ private fun PostGridItem(
         }
     }
 }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditProfileDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onSave: (String, Uri?, String) -> Unit
+) {
+    var username by remember { mutableStateOf(user.username) }
+    var bio by remember { mutableStateOf(user.bio ?: """) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        selectedImageUri = uri
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Profile") },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selectedImageUri != null) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Selected Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (user.profileImageData != null) {
+                        AsyncImage(
+                            model = user.profileImageData,
+                            contentDescription = "Current Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Image")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Bio") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(username, selectedImageUri, bio) }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+

@@ -6,10 +6,15 @@ import android.util.Base64
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import ee.mips.beerreal.data.MockData
+import ee.mips.beerreal.data.api.AddCommentRequest
 import ee.mips.beerreal.data.api.BeerApiService
 import ee.mips.beerreal.data.api.CreatePostRequest
 import ee.mips.beerreal.data.api.RetrofitClient
+import ee.mips.beerreal.data.api.UpdateUserRequest
+import ee.mips.beerreal.data.api.VoteRequest
+import ee.mips.beerreal.data.api.VoteResponse
 import ee.mips.beerreal.data.model.BeerPost
+import ee.mips.beerreal.data.model.Comment
 import ee.mips.beerreal.data.model.User
 import ee.mips.beerreal.data.model.VoteType
 import kotlinx.coroutines.delay
@@ -139,25 +144,66 @@ class BeerRepository(
         }
     }
     
-    suspend fun voteOnPost(postId: String, voteType: VoteType): Result<BeerPost> {
+    suspend fun voteOnPost(postId: String, voteType: VoteType): Result<VoteResponse> {
         return try {
-            delay(300)
-            // In a real app, this would update the server and return updated post
-            val post = MockData.getBeerPosts().find { it.id == postId }
-            if (post != null) {
-                val updatedPost = when (voteType) {
-                    VoteType.UPVOTE -> post.copy(
-                        upvotes = post.upvotes + 1,
-                        userVoteType = VoteType.UPVOTE
-                    )
-                    VoteType.DOWNVOTE -> post.copy(
-                        downvotes = post.downvotes + 1,
-                        userVoteType = VoteType.DOWNVOTE
-                    )
-                }
-                Result.success(updatedPost)
+            val token = auth.currentUser?.getIdToken(false)?.await()?.token
+            val authHeader = if (token != null) "Bearer $token" else throw Exception("User not authenticated")
+
+            val request = VoteRequest(postId, voteType.name)
+            val response = apiService.votePost(request, authHeader)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Post not found"))
+                Result.failure(Exception("Failed to vote: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun addComment(postId: String, text: String): Result<Comment> {
+        return try {
+            val token = auth.currentUser?.getIdToken(false)?.await()?.token
+            val authHeader = if (token != null) "Bearer $token" else throw Exception("User not authenticated")
+
+            val request = AddCommentRequest(postId, text)
+            val response = apiService.addComment(request, authHeader)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to add comment: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUser(username: String?, profileImageUri: Uri?, bio: String?): Result<User> {
+        return try {
+            val token = auth.currentUser?.getIdToken(false)?.await()?.token
+            val authHeader = if (token != null) "Bearer $token" else throw Exception("User not authenticated")
+
+            var profileImageData: String? = null
+            if (profileImageUri != null && context != null) {
+                val inputStream = context.contentResolver.openInputStream(profileImageUri)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+
+                if (bytes != null) {
+                    val base64Image = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                    profileImageData = "data:image/jpeg;base64,$base64Image"
+                }
+            }
+
+            val request = UpdateUserRequest(username, profileImageData, bio)
+            val response = apiService.updateUser(request, authHeader)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to update user: ${response.code()} ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
