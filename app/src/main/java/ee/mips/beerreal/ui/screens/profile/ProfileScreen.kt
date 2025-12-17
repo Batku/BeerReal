@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -25,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ee.mips.beerreal.ui.screens.friends.FriendsDialog
 import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,12 +63,6 @@ fun ProfileScreen(
                 )
             },
             actions = {
-                IconButton(onClick = { viewModel.onFindFriendsClick() }) {
-                    Icon(
-                        imageVector = Icons.Default.PersonAdd,
-                        contentDescription = "Find Friends"
-                    )
-                }
                 IconButton(onClick = { viewModel.refreshProfile() }) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
@@ -219,13 +211,6 @@ fun ProfileScreen(
                 )
             }
         }
-
-        if (uiState.showFriendsDialog) {
-            FriendsDialog(
-                users = uiState.allUsers,
-                onDismiss = viewModel::onDismissFriendsDialog
-            )
-        }
     }
 }
 
@@ -303,11 +288,6 @@ private fun ProfileHeader(
             StatCard(
                 title = "Posts",
                 value = user.totalPosts.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                title = "Friends",
-                value = user.friendsCount.toString(),
                 modifier = Modifier.weight(1f)
             )
         }
