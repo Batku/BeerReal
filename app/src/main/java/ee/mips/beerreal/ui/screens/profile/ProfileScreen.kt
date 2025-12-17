@@ -119,7 +119,10 @@ fun ProfileScreen(
                         ) {
                             // Profile header
                             item(span = { GridItemSpan(3) }) {
-                                ProfileHeader(user = user)
+                                ProfileHeader(
+                                    user = user,
+                                    onEditClick = { showEditDialog = true }
+                                )
                             }
                             
                             // Posts section header
