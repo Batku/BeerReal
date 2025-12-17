@@ -10,17 +10,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import ee.mips.beerreal.data.model.Comment
 import java.text.SimpleDateFormat
 import java.util.*
+
+import androidx.compose.foundation.Image
+import ee.mips.beerreal.util.rememberBase64Image
 
 @Composable
 fun CommentItem(
     comment: Comment,
     modifier: Modifier = Modifier
 ) {
+    val profileImageBitmap = rememberBase64Image(comment.userProfileImageData)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -28,9 +32,9 @@ fun CommentItem(
         verticalAlignment = Alignment.Top
     ) {
         // Profile picture
-        if (comment.userProfileImageData != null) {
-            AsyncImage(
-                model = comment.userProfileImageData,
+        if (profileImageBitmap != null) {
+            Image(
+                bitmap = profileImageBitmap,
                 contentDescription = "Profile Picture",
                 modifier = Modifier
                     .size(32.dp)

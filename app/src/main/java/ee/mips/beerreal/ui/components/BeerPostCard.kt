@@ -21,11 +21,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import ee.mips.beerreal.data.model.BeerPost
 import ee.mips.beerreal.data.model.VoteType
 import java.text.SimpleDateFormat
 import java.util.*
+
+import androidx.compose.foundation.Image
+import ee.mips.beerreal.util.rememberBase64Image
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +39,9 @@ fun BeerPostCard(
     modifier: Modifier = Modifier
 ) {
     var showComments by remember { mutableStateOf(false) }
+    val postImageBitmap = rememberBase64Image(post.imageData)
+    val profileImageBitmap = rememberBase64Image(post.userProfileImageData)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -57,9 +62,9 @@ fun BeerPostCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Profile picture
-                if (post.userProfileImageData != null) {
-                    AsyncImage(
-                        model = post.userProfileImageData,
+                if (profileImageBitmap != null) {
+                    Image(
+                        bitmap = profileImageBitmap,
                         contentDescription = "Profile Picture",
                         modifier = Modifier
                             .size(40.dp)
@@ -110,16 +115,29 @@ fun BeerPostCard(
             Spacer(modifier = Modifier.height(12.dp))
             
             // Beer image
-            AsyncImage(
-                model = post.imageData,
-                contentDescription = "Beer Photo",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentScale = ContentScale.Crop
-            )
+            if (postImageBitmap != null) {
+                Image(
+                    bitmap = postImageBitmap,
+                    contentDescription = "Beer Photo",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Image not available")
+                }
+            }
             
             Spacer(modifier = Modifier.height(12.dp))
             

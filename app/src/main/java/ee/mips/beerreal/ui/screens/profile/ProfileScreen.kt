@@ -227,11 +227,16 @@ fun ProfileScreen(
     }
 }
 
+import androidx.compose.foundation.Image
+import ee.mips.beerreal.util.rememberBase64Image
+
 @Composable
 private fun ProfileHeader(
     user: ee.mips.beerreal.data.model.User,
     onEditClick: () -> Unit
 ) {
+    val profileImageBitmap = rememberBase64Image(user.profileImageData)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -239,9 +244,9 @@ private fun ProfileHeader(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Profile picture
-        if (user.profileImageData != null) {
-            AsyncImage(
-                model = user.profileImageData,
+        if (profileImageBitmap != null) {
+            Image(
+                bitmap = profileImageBitmap,
                 contentDescription = "Profile Picture",
                 modifier = Modifier
                     .size(120.dp)
@@ -385,6 +390,8 @@ private fun PostGridItem(
     post: ee.mips.beerreal.data.model.BeerPost,
     modifier: Modifier = Modifier
 ) {
+    val postImageBitmap = rememberBase64Image(post.imageData)
+
     // just text for now, will be the actual images later
     Card(
         modifier = modifier
@@ -392,9 +399,9 @@ private fun PostGridItem(
             .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        if (post.imageData.isNotEmpty()) {
-             AsyncImage(
-                model = post.imageData,
+        if (postImageBitmap != null) {
+             Image(
+                bitmap = postImageBitmap,
                 contentDescription = "Beer Photo",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -433,6 +440,7 @@ fun EditProfileDialog(
     var username by remember { mutableStateOf(user.username) }
     var bio by remember { mutableStateOf(user.bio ?: "") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val currentProfileImageBitmap = rememberBase64Image(user.profileImageData)
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -463,9 +471,9 @@ fun EditProfileDialog(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                    } else if (user.profileImageData != null) {
-                        AsyncImage(
-                            model = user.profileImageData,
+                    } else if (currentProfileImageBitmap != null) {
+                        Image(
+                            bitmap = currentProfileImageBitmap,
                             contentDescription = "Current Image",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
