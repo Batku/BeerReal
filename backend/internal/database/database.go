@@ -38,7 +38,7 @@ func (d *Database) migrate() error {
 			id TEXT PRIMARY KEY,
 			username TEXT NOT NULL UNIQUE,
 			email TEXT NOT NULL UNIQUE,
-			profile_image_url TEXT,
+			profile_image_data TEXT,
 			taste_score INTEGER DEFAULT 0,
 			total_posts INTEGER DEFAULT 0,
 			friends_count INTEGER DEFAULT 0,
@@ -94,6 +94,9 @@ func (d *Database) migrate() error {
 			return fmt.Errorf("migration failed: %w", err)
 		}
 	}
+
+	// Attempt to migrate old schema if it exists (ignore error if column doesn't exist)
+	d.DB.Exec("ALTER TABLE users RENAME COLUMN profile_image_url TO profile_image_data")
 
 	return nil
 }
