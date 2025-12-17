@@ -227,7 +227,6 @@ fun ProfileScreen(
 }
 
 @Composable
-@Composable
 private fun ProfileHeader(
     user: ee.mips.beerreal.data.model.User,
     onEditClick: () -> Unit
