@@ -89,5 +89,3 @@ data class UpdateUserRequest(
     val profileImageData: String? = null,
     val bio: String? = null
 )
-    val location: String? = null
-)
