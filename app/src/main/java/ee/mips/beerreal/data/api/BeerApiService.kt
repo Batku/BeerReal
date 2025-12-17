@@ -25,6 +25,14 @@ interface BeerApiService {
         @Header("Authorization") token: String? = null
     ): Response<GetPostsResponse>
 
+    @GET("api/users/{userId}/posts")
+    suspend fun getUserPosts(
+        @Path("userId") userId: String,
+        @Query("page") page: Int = 1,
+        @Query("pageSize") pageSize: Int = 20,
+        @Header("Authorization") token: String? = null
+    ): Response<GetPostsResponse>
+
     @GET("api/posts/{id}")
     suspend fun getPost(
         @Path("id") id: String,

@@ -14,6 +14,7 @@ type PostRepository interface {
 	CreatePost(post *models.BeerPost) error
 	GetPostByID(postID string, userID string) (*models.BeerPost, error)
 	GetPosts(userID string, limit, offset int) ([]models.BeerPost, int, error)
+	GetUserPosts(targetUserID string, currentUserID string, limit, offset int) ([]models.BeerPost, int, error)
 	GetUserByID(userID string) (*models.User, error)
 	CreateOrUpdateUser(user *models.User) error
 	GetCommentsByPostID(postID string) ([]models.Comment, error)
@@ -189,6 +190,79 @@ func (r *postRepository) GetPosts(userID string, limit, offset int) ([]models.Be
 	}
 
 	log.Printf("[Repository] GetPosts successful - returning %d posts (total: %d)", len(posts), totalCount)
+	return posts, totalCount, nil
+}
+
+func (r *postRepository) GetUserPosts(targetUserID string, currentUserID string, limit, offset int) ([]models.BeerPost, int, error) {
+	log.Printf("[Repository] GetUserPosts called - targetUserID: %s, currentUserID: %s, limit: %d, offset: %d", targetUserID, currentUserID, limit, offset)
+	
+	// Get total count for this user
+	var totalCount int
+	countQuery := `SELECT COUNT(*) FROM beer_posts WHERE user_id = ?`
+	err := r.db.QueryRow(countQuery, targetUserID).Scan(&totalCount)
+	if err != nil {
+		log.Printf("[Repository] ERROR: Failed to count user posts: %v", err)
+		return nil, 0, fmt.Errorf("failed to count user posts: %w", err)
+	}
+	log.Printf("[Repository] Total posts for user %s: %d", targetUserID, totalCount)
+
+	// Get posts
+	query := `
+		SELECT 
+			bp.id, bp.user_id, u.username, u.profile_image_data,
+			bp.caption, bp.image_data, bp.location, bp.timestamp,
+			bp.upvotes, bp.downvotes, bp.created_at, bp.updated_at
+		FROM beer_posts bp
+		JOIN users u ON bp.user_id = u.id
+		WHERE bp.user_id = ?
+		ORDER BY bp.timestamp DESC
+		LIMIT ? OFFSET ?
+	`
+
+	log.Printf("[Repository] Executing query with limit: %d, offset: %d", limit, offset)
+	rows, err := r.db.Query(query, targetUserID, limit, offset)
+	if err != nil {
+		log.Printf("[Repository] ERROR: Query execution failed: %v", err)
+		return nil, 0, fmt.Errorf("failed to get user posts: %w", err)
+	}
+	defer rows.Close()
+
+	posts := []models.BeerPost{}
+	postCount := 0
+	for rows.Next() {
+		postCount++
+		post := models.BeerPost{}
+		err := rows.Scan(
+			&post.ID, &post.UserID, &post.Username, &post.UserProfileImageData,
+			&post.Caption, &post.ImageData, &post.Location, &post.Timestamp,
+			&post.Upvotes, &post.Downvotes, &post.CreatedAt, &post.UpdatedAt,
+		)
+		if err != nil {
+			log.Printf("[Repository] ERROR: Failed to scan post row %d: %v", postCount, err)
+			return nil, 0, fmt.Errorf("failed to scan post: %w", err)
+		}
+
+		// Get comments for each post
+		comments, err := r.GetCommentsByPostID(post.ID)
+		if err != nil {
+			log.Printf("[Repository] ERROR: Failed to get comments for post %s: %v", post.ID, err)
+			return nil, 0, err
+		}
+		post.Comments = comments
+
+		// Get user's vote if authenticated
+		if currentUserID != "" {
+			vote, _ := r.GetVoteByUserAndPost(currentUserID, post.ID)
+			if vote != nil {
+				post.HasUserVoted = true
+				post.UserVoteType = &vote.VoteType
+			}
+		}
+
+		posts = append(posts, post)
+	}
+
+	log.Printf("[Repository] GetUserPosts successful - returning %d posts", len(posts))
 	return posts, totalCount, nil
 }
 

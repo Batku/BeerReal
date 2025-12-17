@@ -96,6 +96,38 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetUserPosts godoc
+// @Summary Get posts for a specific user
+// @Description Get paginated list of beer posts for a specific user
+// @Tags posts
+// @Produce json
+// @Param userId path string true "User ID"
+// @Param page query int false "Page number" default(1)
+// @Param pageSize query int false "Page size" default(20)
+// @Success 200 {object} models.GetPostsResponse
+// @Failure 500 {object} map[string]string
+// @Router /api/users/{userId}/posts [get]
+func (h *PostHandler) GetUserPosts(c *gin.Context) {
+	targetUserID := c.Param("userId")
+	log.Printf("[GetUserPosts] Request received for user: %s", targetUserID)
+	
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+
+	// Get current user ID if authenticated (optional for viewing posts)
+	currentUserID, _ := middleware.GetUserID(c)
+	
+	response, err := h.service.GetUserPosts(targetUserID, currentUserID, page, pageSize)
+	if err != nil {
+		log.Printf("[GetUserPosts] ERROR: Failed to get user posts: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	log.Printf("[GetUserPosts] SUCCESS: Returning %d posts", len(response.Posts))
+	c.JSON(http.StatusOK, response)
+}
+
 // GetPost godoc
 // @Summary Get a single beer post
 // @Description Get a beer post by ID
@@ -136,6 +168,9 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 
 // RegisterRoutes registers all post-related routes
 func (h *PostHandler) RegisterRoutes(router *gin.RouterGroup, authMiddleware gin.HandlerFunc, optionalAuthMiddleware gin.HandlerFunc) {
+	// User posts route
+	router.GET("/users/:userId/posts", optionalAuthMiddleware, h.GetUserPosts)
+
 	posts := router.Group("/posts")
 	{
 		// Public routes (no auth required, but optional auth for user context)

@@ -14,6 +14,7 @@ type PostService interface {
 	CreatePost(userID string, req *models.CreatePostRequest) (*models.BeerPost, error)
 	GetPostByID(postID string, userID string) (*models.BeerPost, error)
 	GetPosts(userID string, page, pageSize int) (*models.GetPostsResponse, error)
+	GetUserPosts(targetUserID string, currentUserID string, page, pageSize int) (*models.GetPostsResponse, error)
 	EnsureUserExists(userID, email, username string) error
 	VotePost(userID string, req *models.VoteRequest) (*models.VoteResponse, error)
 	AddComment(userID string, req *models.AddCommentRequest) (*models.Comment, error)
@@ -96,6 +97,33 @@ func (s *postService) GetPosts(userID string, page, pageSize int) (*models.GetPo
 	}
 
 	log.Printf("[PostService] Successfully retrieved %d posts (total: %d)", len(posts), totalCount)
+	return &models.GetPostsResponse{
+		Posts:      posts,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
+}
+
+func (s *postService) GetUserPosts(targetUserID string, currentUserID string, page, pageSize int) (*models.GetPostsResponse, error) {
+	log.Printf("[PostService] GetUserPosts called - targetUserID: %s, currentUserID: %s, page: %d, pageSize: %d", targetUserID, currentUserID, page, pageSize)
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+	log.Printf("[PostService] Fetching user posts with limit: %d, offset: %d", pageSize, offset)
+
+	posts, totalCount, err := s.repo.GetUserPosts(targetUserID, currentUserID, pageSize, offset)
+	if err != nil {
+		log.Printf("[PostService] ERROR: Failed to get user posts from repository: %v", err)
+		return nil, fmt.Errorf("failed to get user posts: %w", err)
+	}
+
+	log.Printf("[PostService] Successfully retrieved %d posts for user %s (total: %d)", len(posts), targetUserID, totalCount)
 	return &models.GetPostsResponse{
 		Posts:      posts,
 		TotalCount: totalCount,

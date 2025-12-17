@@ -28,8 +28,6 @@ class ProfileViewModel(
     
     init {
         loadCurrentUser()
-        loadUserPosts()
-        loadAllUsers()
     }
     
     fun loadCurrentUser() {
@@ -42,6 +40,9 @@ class ProfileViewModel(
                         isLoading = false,
                         errorMessage = null
                     )
+                    if (user != null) {
+                        loadUserPosts(user.id)
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -52,11 +53,11 @@ class ProfileViewModel(
         }
     }
     
-    private fun loadUserPosts() {
+    private fun loadUserPosts(userId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingPosts = true)
             try {
-                repository.getUserPosts("user1").collect { posts ->
+                repository.getUserPosts(userId).collect { posts ->
                     _uiState.value = _uiState.value.copy(
                         userPosts = posts,
                         isLoadingPosts = false
@@ -67,20 +68,6 @@ class ProfileViewModel(
                     isLoadingPosts = false,
                     errorMessage = e.message ?: "Failed to load posts"
                 )
-            }
-        }
-    }
-    
-    private fun loadAllUsers() {
-        viewModelScope.launch {
-            try {
-                repository.getAllUsers().collect { users ->
-                    _uiState.value = _uiState.value.copy(
-                        allUsers = users.filter { it.id != "user1" } // Exclude current user for friends list (currently hard coded), also will be queried on the backend and wont load ALL users, thats stupid like braindead like damn
-                    )
-                }
-            } catch (e: Exception) {
-                // Handle error silently
             }
         }
     }
@@ -113,15 +100,6 @@ class ProfileViewModel(
 
     fun refreshProfile() {
         loadCurrentUser()
-        loadUserPosts()
-    }
-    
-    fun onFindFriendsClick() {
-        _uiState.value = _uiState.value.copy(showFriendsDialog = true)
-    }
-    
-    fun onDismissFriendsDialog() {
-        _uiState.value = _uiState.value.copy(showFriendsDialog = false)
     }
     
     fun clearError() {
