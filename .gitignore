@@ -16,6 +16,6 @@ local.properties
 .vscode
 .vscode/*
 **/.vscode/
-.idea
+.idea/*
 .gradle
 /app/build

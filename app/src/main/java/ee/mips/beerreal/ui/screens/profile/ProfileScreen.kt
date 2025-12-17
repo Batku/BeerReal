@@ -431,7 +431,7 @@ fun EditProfileDialog(
     onSave: (String, Uri?, String) -> Unit
 ) {
     var username by remember { mutableStateOf(user.username) }
-    var bio by remember { mutableStateOf(user.bio ?: """) }
+    var bio by remember { mutableStateOf(user.bio ?: "") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val launcher = rememberLauncherForActivityResult(

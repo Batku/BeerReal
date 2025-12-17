@@ -41,7 +41,7 @@ fun LoginScreen(
     // Configure Google Sign In
     val gso = remember {
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("940240053356-l1so1fvvms0g6btdunleqe9nmd4gpg6f.apps.googleusercontent.com")
+            .requestIdToken("940240053356-l1so1fvvms0g6btdunleqe9nmd4gpg6f.apps.googleusercontent.com") // this is a real client id... dont worry about it :3
             .requestEmail()
             .build()
     }
