@@ -125,7 +125,7 @@ func (s *postService) EnsureUserExists(userID, email, username string) error {
 
 func (s *postService) VotePost(userID string, req *models.VoteRequest) (*models.VoteResponse, error) {
 	// Check if post exists
-	post, err := s.repo.GetPostByID(req.PostID)
+	post, err := s.repo.GetPostByID(req.PostID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
@@ -217,7 +217,7 @@ func (s *postService) VotePost(userID string, req *models.VoteRequest) (*models.
 
 func (s *postService) AddComment(userID string, req *models.AddCommentRequest) (*models.Comment, error) {
 	// Check if post exists
-	post, err := s.repo.GetPostByID(req.PostID)
+	post, err := s.repo.GetPostByID(req.PostID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get post: %w", err)
 	}
